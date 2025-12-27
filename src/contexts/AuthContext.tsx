@@ -7,8 +7,7 @@ import React, {
 } from "react";
 import { checkRateLimit, authRateLimiter } from "@/utils/rateLimiter";
 
-const AUTH_API =
-  "https://functions.poehali.dev/efe4c16d-df70-4da6-93f8-3f70525812b4";
+const AUTH_API = 'https://functions.poehali.dev/37848519-8d12-40c1-b0cb-f22c293fcdb5';
 
 interface UserProfile {
   id: number;
@@ -58,9 +57,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("authToken"),
-  );
+  const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -69,20 +66,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const response = await fetch(`${AUTH_API}?verify=true`, {
             headers: {
-              "X-Auth-Token": token,
+              'X-Auth-Token': token,
             },
           });
-
+          
           if (response.ok) {
             const data = await response.json();
             setUser(data.user);
           } else {
-            localStorage.removeItem("authToken");
+            localStorage.removeItem('authToken');
             setToken(null);
           }
         } catch (error) {
-          console.error("Token verification failed:", error);
-          localStorage.removeItem("authToken");
+          console.error('Token verification failed:', error);
+          localStorage.removeItem('authToken');
           setToken(null);
         }
       }
@@ -96,31 +93,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       checkRateLimit(`telegram_${telegramUser.id}`, authRateLimiter);
-
+      
       const response = await fetch(AUTH_API, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: "telegram_auth",
+          action: 'telegram_auth',
           telegram_id: telegramUser.id,
           first_name: telegramUser.first_name,
           last_name: telegramUser.last_name,
           username: telegramUser.username,
-          photo_url: telegramUser.photo_url || "",
+          photo_url: telegramUser.photo_url || '',
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Telegram auth failed");
+        throw new Error(error.error || 'Telegram auth failed');
       }
 
       const data = await response.json();
       setToken(data.token);
       setUser(data.user);
-      localStorage.setItem("authToken", data.token);
+      localStorage.setItem('authToken', data.token);
     } finally {
       setIsLoading(false);
     }
@@ -130,21 +127,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (token) {
       try {
         await fetch(AUTH_API, {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            "X-Auth-Token": token,
+            'Content-Type': 'application/json',
+            'X-Auth-Token': token,
           },
           body: JSON.stringify({
-            action: "logout",
+            action: 'logout',
           }),
         });
       } catch (error) {
-        console.error("Logout failed:", error);
+        console.error('Logout failed:', error);
       }
     }
-
-    localStorage.removeItem("authToken");
+    
+    localStorage.removeItem('authToken');
     setToken(null);
     setUser(null);
   };
@@ -154,21 +151,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const response = await fetch(AUTH_API, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          "X-Auth-Token": token,
+          'Content-Type': 'application/json',
+          'X-Auth-Token': token,
         },
         body: JSON.stringify(updates),
       });
 
       if (!response.ok) {
-        throw new Error("Profile update failed");
+        throw new Error('Profile update failed');
       }
 
       const profileResponse = await fetch(AUTH_API, {
         headers: {
-          "X-Auth-Token": token,
+          'X-Auth-Token': token,
         },
       });
 
@@ -178,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(updatedUser);
       }
     } catch (error) {
-      console.error("Update profile error:", error);
+      console.error('Update profile error:', error);
       throw error;
     }
   };
@@ -187,10 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     token,
     isAuthenticated: !!user,
-    isAdmin:
-      user?.role === "admin" ||
-      user?.role === "ceo" ||
-      user?.role === "moderator",
+    isAdmin: user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'moderator',
     isLoading,
     loginWithTelegram,
     logout,

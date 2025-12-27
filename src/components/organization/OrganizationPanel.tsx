@@ -131,53 +131,29 @@ export const OrganizationPanel: React.FC = () => {
 
   const handleSaveShop = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[OrganizationPanel] handleSaveShop вызван', { editingShop, token: !!token });
-    
-    if (!editingShop || !token) {
-      console.error('[OrganizationPanel] Нет данных для сохранения', { editingShop, token: !!token });
-      return;
-    }
-
-    if (!editingShop.category) {
-      toast({
-        title: 'Ошибка',
-        description: 'Выберите категорию',
-        variant: 'destructive'
-      });
-      return;
-    }
+    if (!editingShop || !token) return;
 
     try {
       let imageUrl = editingShop.image_url;
 
       if (shopImageFile) {
-        console.log('[OrganizationPanel] Загрузка изображения...');
         const uploadResult = await uploadFile(shopImageFile, { folder: 'shops' });
         if (uploadResult) {
           imageUrl = uploadResult.url;
-          console.log('[OrganizationPanel] Изображение загружено:', imageUrl);
         }
       }
 
       const method = editingShop.id ? 'PUT' : 'POST';
-      const payload = { ...editingShop, image_url: imageUrl };
-      console.log('[OrganizationPanel] Отправка запроса:', { method, payload });
-      
       const response = await fetch(`${ORG_API}?action=shop`, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'X-Auth-Token': token
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ ...editingShop, image_url: imageUrl })
       });
 
-      console.log('[OrganizationPanel] Ответ получен:', { status: response.status, ok: response.ok });
-
       if (response.ok) {
-        const data = await response.json();
-        console.log('[OrganizationPanel] Данные ответа:', data);
-        
         await loadOrganizationShops(selectedOrg!);
         setEditingShop(null);
         setShowShopForm(false);
@@ -187,17 +163,9 @@ export const OrganizationPanel: React.FC = () => {
           title: 'Успешно',
           description: editingShop.id ? 'Карточка обновлена' : 'Карточка создана'
         });
-      } else {
-        const errorText = await response.text();
-        console.error('[OrganizationPanel] Ошибка ответа:', errorText);
-        toast({
-          title: 'Ошибка',
-          description: `Не удалось сохранить: ${errorText}`,
-          variant: 'destructive'
-        });
       }
     } catch (error) {
-      console.error('[OrganizationPanel] Исключение при сохранении:', error);
+      console.error('Failed to save shop:', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось сохранить карточку',
@@ -627,7 +595,7 @@ export const OrganizationPanel: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-              <form onSubmit={handleSaveShop} className="space-y-4">
+            <form onSubmit={handleSaveShop} className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Изображение (необязательно)</label>
                 <div className="mt-2">
@@ -675,11 +643,10 @@ export const OrganizationPanel: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium">Категория *</label>
+                <label className="text-sm font-medium">Категория</label>
                 <Select
                   value={editingShop.category}
                   onValueChange={(value) => setEditingShop({ ...editingShop, category: value })}
-                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите категорию" />
@@ -690,9 +657,6 @@ export const OrganizationPanel: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {!editingShop.category && (
-                  <p className="text-xs text-red-500 mt-1">Выберите категорию</p>
-                )}
               </div>
 
               <div>
@@ -754,14 +718,7 @@ export const OrganizationPanel: React.FC = () => {
               </div>
 
               <div className="flex gap-3">
-                <Button 
-                  type="button"
-                  className="flex-1"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleSaveShop(e as any);
-                  }}
-                >
+                <Button type="submit" className="flex-1">
                   <Icon name="Check" size={16} className="mr-2" />
                   {editingShop.id ? 'Сохранить' : 'Создать'}
                 </Button>

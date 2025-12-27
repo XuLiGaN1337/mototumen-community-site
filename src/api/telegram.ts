@@ -4,32 +4,30 @@ export interface TelegramChannelData {
   error?: string;
 }
 
-const TELEGRAM_API =
-  "https://functions.poehali.dev/efe4c16d-df70-4da6-93f8-3f70525812b4";
+const TELEGRAM_API = 'https://functions.poehali.dev/efe4c16d-df70-4da6-93f8-3f70525812b4';
 
-export async function getTelegramChannelData(
-  channelUsername: string,
-): Promise<TelegramChannelData> {
+export async function getTelegramChannelData(channelUsername: string): Promise<TelegramChannelData> {
   try {
     const response = await fetch(`${TELEGRAM_API}?channel=${channelUsername}`);
-
+    
     if (!response.ok) {
-      throw new Error("Failed to fetch channel data");
+      throw new Error('Failed to fetch channel data');
     }
-
+    
     const data = await response.json();
-
+    
     return {
       memberCount: data.memberCount || 400,
-      title: data.title || "MotoTyumen",
-      error: data.error,
+      title: data.title || 'MotoTyumen',
+      error: data.error
     };
+    
   } catch (error) {
-    console.warn("Failed to fetch Telegram data:", error);
+    console.warn('Failed to fetch Telegram data:', error);
     return {
       memberCount: 400,
-      title: "MotoTyumen",
-      error: "Failed to sync with Telegram",
+      title: 'MotoTyumen',
+      error: 'Failed to sync with Telegram'
     };
   }
 }
@@ -41,14 +39,14 @@ const CACHE_DURATION = 10 * 60 * 1000; // 10 минут
 
 export async function getCachedTelegramData(): Promise<TelegramChannelData> {
   const now = Date.now();
-
-  if (cachedData && now - lastFetchTime < CACHE_DURATION) {
+  
+  if (cachedData && (now - lastFetchTime) < CACHE_DURATION) {
     return cachedData;
   }
-
-  const data = await getTelegramChannelData("MotoTyumen");
+  
+  const data = await getTelegramChannelData('MotoTyumen');
   cachedData = data;
   lastFetchTime = now;
-
+  
   return data;
 }
