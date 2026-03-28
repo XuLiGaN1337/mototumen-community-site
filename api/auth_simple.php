@@ -17,56 +17,10 @@ function sendResponse($data, $statusCode = 200) {
     exit();
 }
 
-// Определяем тип запроса
-$requestMethod = $_SERVER['REQUEST_METHOD'];
-
-// Если это GET запрос с токеном в параметрах URL (из Telegram бота)
-if ($requestMethod === 'GET' && isset($_GET['token'])) {
+// Авторизация через Telegram
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Получаем токен из параметров URL
-        $token = $_GET['token'];
-        
-        if (empty($token)) {
-            sendResponse(['error' => 'Токен не предоставлен'], 400);
-        }
-        
-        // Декодируем JWT токен (без проверки подписи для упрощения)
-        $parts = explode('.', $token);
-        if (count($parts) !== 3) {
-            sendResponse(['error' => 'Неверный формат токена'], 400);
-        }
-        
-        $payload = json_decode(base64_decode($parts[1]), true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            sendResponse(['error' => 'Ошибка декодирования токена: ' . json_last_error_msg()], 400);
-        }
-        
-        // Проверяем обязательные поля
-        if (!isset($payload['id']) || !isset($payload['first_name'])) {
-            sendResponse(['error' => 'В токене отсутствуют обязательные данные'], 400);
-        }
-        
-        // Используем те же данные, что и из JWT
-        $input = [
-            'id' => $payload['id'],
-            'username' => $payload['username'] ?? null,
-            'first_name' => $payload['first_name'],
-            'last_name' => $payload['last_name'] ?? null,
-            'photo_url' => null // В JWT токене нет photo_url
-        ];
-        
-        // Продолжаем с обработкой как в оригинальном коде
-        processUser($input);
-        
-    } catch (Exception $e) {
-        sendResponse(['error' => 'Ошибка: ' . $e->getMessage()], 500);
-    }
-}
-// Если это POST запрос с JSON данными (оригинальная логика)
-elseif ($requestMethod === 'POST') {
-    try {
-        // Получаем данные (оригинальная логика)
+        // Получаем данные
         $raw_input = file_get_contents('php://input');
         
         if (empty($raw_input)) {
@@ -84,18 +38,6 @@ elseif ($requestMethod === 'POST') {
             sendResponse(['error' => 'ID и имя обязательны'], 400);
         }
         
-        // Продолжаем с обработкой как в оригинальном коде
-        processUser($input);
-        
-    } catch (Exception $e) {
-        sendResponse(['error' => 'Ошибка: ' . $e->getMessage()], 500);
-    }
-} else {
-    sendResponse(['error' => 'Неподдерживаемый тип запроса'], 405);
-}
-
-function processUser($input) {
-    try {
         // Подключение к БД
         $dsn = "mysql:host=server184.hosting.reg.ru;port=3306;dbname=moto_classifieds;charset=utf8mb4";
         $pdo = new PDO($dsn, 'u3183548_default', '81DitCnnDi2664KZ', [
@@ -176,6 +118,10 @@ function processUser($input) {
         
     } catch (PDOException $e) {
         sendResponse(['error' => 'Ошибка БД: ' . $e->getMessage()], 500);
+    } catch (Exception $e) {
+        sendResponse(['error' => 'Ошибка: ' . $e->getMessage()], 500);
     }
+} else {
+    sendResponse(['error' => 'Только POST запросы'], 405);
 }
 ?>
