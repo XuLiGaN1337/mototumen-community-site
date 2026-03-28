@@ -24,7 +24,7 @@ interface OrganizationCardProps {
   org: OrganizationCardData;
 }
 
-const AUTH_API = 'https://functions.poehali.dev/37848519-8d12-40c1-b0cb-f22c293fcdb5';
+const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
 export const OrganizationCard: React.FC<OrganizationCardProps> = ({ org }) => {
   const [isFavorite, setIsFavorite] = useState(false);

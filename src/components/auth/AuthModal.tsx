@@ -1,6 +1,6 @@
 import React from "react";
 import Icon from "@/components/ui/icon";
-import TelegramAuthSimple from "@/components/auth/TelegramAuthSimple";
+import { Button } from "@/components/ui/button";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -35,7 +35,23 @@ const AuthModal: React.FC<AuthModalProps> = ({
           </p>
         </div>
         
-        <TelegramAuthSimple onClose={onClose} />
+        <a
+          href="https://t.me/auth_mototyumen_bot?start=auth"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <Button
+            className="w-full bg-[#0088cc] hover:bg-[#0077bb] text-white font-medium py-3"
+          >
+            <Icon name="Send" className="h-5 w-5 mr-2" />
+            Войти через Telegram
+          </Button>
+        </a>
+
+        <p className="text-center text-xs text-gray-500 mt-4">
+          Бот отправит ссылку для входа на сайт
+        </p>
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ const AuthCallback: React.FC = () => {
         const token = searchParams.get("token");
         
         if (token) {
-          const response = await fetch('https://functions.poehali.dev/37848519-8d12-40c1-b0cb-f22c293fcdb5', {
+          const response = await fetch('https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'verify_jwt_token', token })

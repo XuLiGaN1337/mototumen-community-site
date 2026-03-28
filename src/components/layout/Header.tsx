@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { UserProfile, useAuth } from "@/contexts/AuthContext";
-import TelegramAuthSimple from "@/components/auth/TelegramAuthSimple";
+// Auth через бота — виджет больше не нужен
 import { getRoleEmoji } from "@/components/admin/RoleBadge";
 
 interface HeaderProps {}
@@ -21,7 +21,7 @@ const ADMIN_API = 'https://functions.poehali.dev/a4bf4de7-33a4-406c-95cc-0529c16
 
 const Header: React.FC<HeaderProps> = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showTelegramAuth, setShowTelegramAuth] = useState(false);
+  // showTelegramAuth removed — auth через бота
   const [showDebug, setShowDebug] = useState(false);
   const [hasOrganization, setHasOrganization] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -362,28 +362,21 @@ const Header: React.FC<HeaderProps> = () => {
 
               {/* Auth - Mobile - только кнопка входа для неавторизованных */}
               {!isAuthenticated && (
-                <button
-                  onClick={() => setShowTelegramAuth(true)}
+                <a
+                  href="https://t.me/auth_mototyumen_bot?start=auth"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="block py-2 px-4 text-white bg-[#0088cc] hover:bg-[#0077bb] rounded flex items-center transition-colors border-t border-dark-700"
                 >
                   <Icon name="Send" className="h-4 w-4 mr-2" />
                   Войти через Telegram
-                </button>
+                </a>
               )}
             </div>
           </nav>
         )}
       </div>
 
-      {/* Telegram Auth Modal */}
-      {showTelegramAuth && (
-        <TelegramAuthSimple
-          onAuth={() => {
-            setShowTelegramAuth(false);
-          }}
-          onClose={() => setShowTelegramAuth(false)}
-        />
-      )}
     </header>
   );
 };

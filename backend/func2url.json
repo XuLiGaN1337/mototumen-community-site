@@ -1,17 +1,5 @@
 {
-  "check-store-access": "https://functions.poehali.dev/81c54822-a16d-4abd-9085-a49f6c685696",
-  "zm-store-sellers-manage": "https://functions.poehali.dev/b9e68923-db5a-4903-9eb9-7ff37e2337c7",
-  "zm-store-sellers": "https://functions.poehali.dev/998bd736-839c-4b49-ab49-51997ba59af8",
-  "zm-store-products": "https://functions.poehali.dev/cbc3e9d9-0880-4a6c-b047-401adf04e40a",
-  "seller-management": "https://functions.poehali.dev/666032b0-b3d7-497e-989d-cf5ac4db059a",
-  "admin-stats": "https://functions.poehali.dev/b660b528-6680-466a-8222-fc672d9003a5",
-  "admin-users": "https://functions.poehali.dev/16633539-477f-4889-bcb3-2c029840174c",
-  "admin-products": "https://functions.poehali.dev/cc081168-1f9b-4722-a67a-d65236d24d20",
-  "admin-auth": "https://functions.poehali.dev/86524bce-07c8-41ba-bfd2-196753be77a5",
-  "notify-ceo": "https://functions.poehali.dev/91298e06-2fa2-4c80-875e-320c6c019d54",
-  "upload-media": "https://functions.poehali.dev/ceec9f9e-e9b1-4c92-8458-cdd3f19dba0f",
-  "telegram-stats": "https://functions.poehali.dev/efe4c16d-df70-4da6-93f8-3f70525812b4",
-  "admin": "https://functions.poehali.dev/a4bf4de7-33a4-406c-95cc-0529c16d6677",
-  "auth": "https://functions.poehali.dev/37848519-8d12-40c1-b0cb-f22c293fcdb5",
-  "content": "https://functions.poehali.dev/5b8dbbf1-556a-43c8-b39c-e8096eebd5d4"
+  "telegram-bot-auth": "https://functions.poehali.dev/223eee75-2616-4beb-82b4-313589e8145b",
+  "auth": "https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e",
+  "content": "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388"
 }
