@@ -5,7 +5,7 @@ export interface TelegramChannelData {
 }
 
 const TELEGRAM_API =
-  "https://functions.poehali.dev/37848519-8d12-40c1-b0cb-f22c293fcdb5";
+  "https://functions.poehali.dev/efe4c16d-df70-4da6-93f8-3f70525812b4";
 
 export async function getTelegramChannelData(
   channelUsername: string,
