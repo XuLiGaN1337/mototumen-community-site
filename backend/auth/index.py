@@ -119,27 +119,26 @@ def upload_avatar_to_s3(photo_url: str, user_id: int) -> Optional[str]:
         
         file_hash = hashlib.md5(image_data).hexdigest()[:8]
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        file_name = f"avatars/{user_id}_{timestamp}_{file_hash}.jpg"
+        key = f"avatars/{user_id}_{timestamp}_{file_hash}.jpg"
         
-        s3_client = boto3.client(
+        access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+        secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+        
+        s3 = boto3.client(
             's3',
-            endpoint_url='https://storage.yandexcloud.net',
-            aws_access_key_id=os.environ.get('YC_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.environ.get('YC_SECRET_ACCESS_KEY'),
-            region_name='ru-central1'
+            endpoint_url='https://bucket.poehali.dev',
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
         )
         
-        bucket_name = os.environ.get('YC_STORAGE_BUCKET')
-        
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=file_name,
+        s3.put_object(
+            Bucket='files',
+            Key=key,
             Body=image_data,
             ContentType='image/jpeg',
-            ACL='public-read'
         )
         
-        return f"https://storage.yandexcloud.net/{bucket_name}/{file_name}"
+        return f"https://cdn.poehali.dev/projects/{access_key}/bucket/{key}"
     except Exception as e:
         print(f"[AVATAR UPLOAD ERROR] {str(e)}")
         return None
