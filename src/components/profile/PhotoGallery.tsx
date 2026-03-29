@@ -68,20 +68,22 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       </div>
 
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading || loading}
-          className="aspect-square rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-400 flex flex-col items-center justify-center gap-1 transition-colors bg-[#1e2332] disabled:opacity-50"
-        >
-          {uploading ? (
-            <Icon name="Loader2" className="h-5 w-5 text-blue-400 animate-spin" />
-          ) : (
-            <Icon name="Plus" className="h-5 w-5 text-gray-400" />
-          )}
-          <span className="text-[10px] text-gray-500">
-            {uploading ? "Загрузка..." : "Добавить"}
-          </span>
-        </button>
+        {photos.length < 3 && (
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading || loading}
+            className="aspect-square rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-400 flex flex-col items-center justify-center gap-1 transition-colors bg-[#1e2332] disabled:opacity-50"
+          >
+            {uploading ? (
+              <Icon name="Loader2" className="h-5 w-5 text-blue-400 animate-spin" />
+            ) : (
+              <Icon name="Plus" className="h-5 w-5 text-gray-400" />
+            )}
+            <span className="text-[10px] text-gray-500">
+              {uploading ? "Загрузка..." : `${photos.length}/3`}
+            </span>
+          </button>
+        )}
         <input
           ref={fileRef}
           type="file"

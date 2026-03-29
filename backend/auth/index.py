@@ -144,10 +144,17 @@ def upload_avatar_to_s3(photo_url: str, user_id: int) -> Optional[str]:
         return None
 
 def move_avatar_to_photos(cur, user_id: int):
-    """Move current avatar to user_photos before replacing"""
+    """Move current avatar to user_photos before replacing (max 3 photos)"""
     cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     if row and row['avatar_url'] and row['avatar_url'].startswith('http'):
+        cur.execute(f"SELECT COUNT(*) as cnt FROM user_photos WHERE user_id = {user_id}")
+        cnt = cur.fetchone()
+        if cnt and cnt['cnt'] >= 3:
+            cur.execute(f"SELECT id FROM user_photos WHERE user_id = {user_id} ORDER BY created_at ASC LIMIT 1")
+            oldest = cur.fetchone()
+            if oldest:
+                cur.execute(f"DELETE FROM user_photos WHERE id = {oldest['id']}")
         cur.execute(
             "INSERT INTO user_photos (user_id, photo_url, source) VALUES (%s, %s, 'avatar')",
             (user_id, row['avatar_url'])
@@ -873,6 +880,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     photo_url = body.get('photo_url')
                     if not photo_url:
                         return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'photo_url required'}), 'isBase64Encoded': False}
+                    cur.execute(f"SELECT COUNT(*) as cnt FROM user_photos WHERE user_id = {user['id']}")
+                    cnt = cur.fetchone()
+                    if cnt and cnt['cnt'] >= 3:
+                        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Максимум 3 фото'}), 'isBase64Encoded': False}
                     cur.execute("INSERT INTO user_photos (user_id, photo_url, source) VALUES (%s, %s, 'upload') RETURNING id, photo_url, source, created_at", (user['id'], photo_url))
                     new_photo = cur.fetchone()
                     conn.commit()

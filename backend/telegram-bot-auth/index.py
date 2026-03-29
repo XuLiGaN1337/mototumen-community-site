@@ -123,11 +123,16 @@ def handler(event: dict, context: dict) -> dict:
         # Could be callback_query, edited_message, etc. - ignore
         return make_response(200, {"ok": True})
     
-    chat_id = message.get("chat", {}).get("id")
+    chat = message.get("chat", {})
+    chat_id = chat.get("id")
+    chat_type = chat.get("type", "")
     from_user = message.get("from", {})
     text = message.get("text", "")
     
     if not chat_id:
+        return make_response(200, {"ok": True})
+    
+    if chat_type != "private":
         return make_response(200, {"ok": True})
     
     # Handle /start command
