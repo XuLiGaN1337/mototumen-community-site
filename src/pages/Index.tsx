@@ -4,12 +4,12 @@ import HeroSection from "@/components/layout/HeroSection";
 import StatsSection from "@/components/layout/StatsSection";
 import MotorcycleHeroSection from "@/components/layout/MotorcycleHeroSection";
 import BoardSection from "@/components/layout/BoardSection";
-import FallingLeaves from "@/components/ui/falling-leaves";
+import SeasonEffect from "@/components/ui/season-effect";
 
 const Index: React.FC = () => {
   return (
     <PageLayout>
-      <FallingLeaves />
+      <SeasonEffect />
       
       {/* Hero + Stats Combined Section */}
       <div className="relative overflow-hidden">
