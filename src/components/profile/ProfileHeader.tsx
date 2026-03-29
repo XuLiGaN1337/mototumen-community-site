@@ -13,6 +13,7 @@ interface ProfileHeaderProps {
   onEdit: () => void;
   onLogout: () => void;
   onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveAvatar?: () => void;
   getDefaultAvatar: (gender: string) => string;
 }
 
@@ -25,8 +26,10 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onEdit,
   onLogout,
   onAvatarChange,
+  onRemoveAvatar,
   getDefaultAvatar,
 }) => {
+  const hasCustomAvatar = user.avatar_url && user.avatar_url.startsWith('http');
   return (
     <div className="bg-[#252836] rounded-lg p-4 relative">
       <div className="absolute top-4 right-4 flex gap-2">
@@ -63,6 +66,15 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 className="hidden"
               />
             </label>
+          )}
+          {hasCustomAvatar && !isEditing && onRemoveAvatar && (
+            <button
+              onClick={onRemoveAvatar}
+              className="absolute -bottom-1 -right-1 p-1.5 bg-red-600 hover:bg-red-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Удалить аватар"
+            >
+              <Icon name="X" className="h-3 w-3 text-white" />
+            </button>
           )}
         </div>
         <div className="flex-1 pr-16">
