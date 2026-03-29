@@ -868,6 +868,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     cur.execute(f"DELETE FROM user_photos WHERE id = {photo_id} AND user_id = {user['id']}")
                     conn.commit()
                     return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Avatar updated'}), 'isBase64Encoded': False}
+                
+                elif action_type == 'add_photo':
+                    photo_url = body.get('photo_url')
+                    if not photo_url:
+                        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'photo_url required'}), 'isBase64Encoded': False}
+                    cur.execute("INSERT INTO user_photos (user_id, photo_url, source) VALUES (%s, %s, 'upload') RETURNING id, photo_url, source, created_at", (user['id'], photo_url))
+                    new_photo = cur.fetchone()
+                    conn.commit()
+                    return {'statusCode': 201, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'photo': dict(new_photo)}, default=str), 'isBase64Encoded': False}
         
         # === PROFILE (my profile) ===
         else:

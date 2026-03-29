@@ -250,6 +250,24 @@ const Profile = () => {
     }
   };
 
+  const handleUploadPhoto = async (file: File) => {
+    if (!token) return;
+    try {
+      const uploadResult = await uploadFile(file, { folder: 'photos' });
+      if (!uploadResult) throw new Error('Не удалось загрузить фото');
+
+      await fetch(`${AUTH_API}?action=photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+        body: JSON.stringify({ action: 'add_photo', photo_url: uploadResult.url }),
+      });
+      toast({ title: "Фото загружено" });
+      await loadProfile();
+    } catch {
+      toast({ title: "Ошибка загрузки", variant: "destructive" });
+    }
+  };
+
   const handleEditFormChange = (field: string, value: string) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
@@ -308,8 +326,10 @@ const Profile = () => {
                   onSetAsAvatar={handleSetPhotoAsAvatar}
                   onRemovePhoto={handleRemovePhoto}
                   onRemoveAvatar={handleRemoveAvatar}
+                  onUploadPhoto={handleUploadPhoto}
                   currentAvatarUrl={profileData?.profile?.avatar_url}
                   loading={loading}
+                  uploading={uploadingMedia}
                 />
               </div>
 

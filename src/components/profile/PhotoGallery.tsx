@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 
@@ -14,8 +14,10 @@ interface PhotoGalleryProps {
   onSetAsAvatar: (photoId: number) => void;
   onRemovePhoto: (photoId: number) => void;
   onRemoveAvatar: () => void;
+  onUploadPhoto: (file: File) => void;
   currentAvatarUrl?: string;
   loading?: boolean;
+  uploading?: boolean;
 }
 
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
@@ -23,12 +25,21 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   onSetAsAvatar,
   onRemovePhoto,
   onRemoveAvatar,
+  onUploadPhoto,
   currentAvatarUrl,
   loading,
+  uploading,
 }) => {
   const [viewPhoto, setViewPhoto] = useState<Photo | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  if (!photos.length && !currentAvatarUrl) return null;
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUploadPhoto(file);
+      e.target.value = "";
+    }
+  };
 
   return (
     <div className="bg-[#252836] rounded-lg p-4">
@@ -36,56 +47,79 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         <h3 className="text-white font-semibold flex items-center gap-2">
           <Icon name="Image" className="h-4 w-4 text-blue-400" />
           Фото профиля
+          {photos.length > 0 && (
+            <span className="text-xs text-gray-500">({photos.length})</span>
+          )}
         </h3>
-        {currentAvatarUrl && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onRemoveAvatar}
-            disabled={loading}
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs"
-          >
-            <Icon name="Trash2" className="h-3 w-3 mr-1" />
-            Убрать аватар
-          </Button>
-        )}
+        <div className="flex gap-1">
+          {currentAvatarUrl && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRemoveAvatar}
+              disabled={loading}
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs"
+            >
+              <Icon name="Trash2" className="h-3 w-3 mr-1" />
+              Убрать аватар
+            </Button>
+          )}
+        </div>
       </div>
 
-      {photos.length === 0 ? (
-        <p className="text-gray-500 text-sm">Предыдущих фото нет</p>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {photos.map((photo) => (
-            <div
-              key={photo.id}
-              className="relative group aspect-square rounded-lg overflow-hidden bg-[#1e2332]"
-            >
-              <img
-                src={photo.photo_url}
-                alt="Фото"
-                className="w-full h-full object-cover cursor-pointer"
-                onClick={() => setViewPhoto(photo)}
-              />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                <button
-                  onClick={() => onSetAsAvatar(photo.id)}
-                  className="p-1.5 bg-blue-500/80 rounded-full hover:bg-blue-500 transition-colors"
-                  title="Установить как аватар"
-                >
-                  <Icon name="UserCheck" className="h-3 w-3 text-white" />
-                </button>
-                <button
-                  onClick={() => onRemovePhoto(photo.id)}
-                  className="p-1.5 bg-red-500/80 rounded-full hover:bg-red-500 transition-colors"
-                  title="Удалить"
-                >
-                  <Icon name="Trash2" className="h-3 w-3 text-white" />
-                </button>
-              </div>
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading || loading}
+          className="aspect-square rounded-lg border-2 border-dashed border-gray-600 hover:border-blue-400 flex flex-col items-center justify-center gap-1 transition-colors bg-[#1e2332] disabled:opacity-50"
+        >
+          {uploading ? (
+            <Icon name="Loader2" className="h-5 w-5 text-blue-400 animate-spin" />
+          ) : (
+            <Icon name="Plus" className="h-5 w-5 text-gray-400" />
+          )}
+          <span className="text-[10px] text-gray-500">
+            {uploading ? "Загрузка..." : "Добавить"}
+          </span>
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
+        {photos.map((photo) => (
+          <div
+            key={photo.id}
+            className="relative group aspect-square rounded-lg overflow-hidden bg-[#1e2332]"
+          >
+            <img
+              src={photo.photo_url}
+              alt="Фото"
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={() => setViewPhoto(photo)}
+            />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+              <button
+                onClick={() => onSetAsAvatar(photo.id)}
+                className="p-1.5 bg-blue-500/80 rounded-full hover:bg-blue-500 transition-colors"
+                title="Установить как аватар"
+              >
+                <Icon name="UserCheck" className="h-3 w-3 text-white" />
+              </button>
+              <button
+                onClick={() => onRemovePhoto(photo.id)}
+                className="p-1.5 bg-red-500/80 rounded-full hover:bg-red-500 transition-colors"
+                title="Удалить"
+              >
+                <Icon name="Trash2" className="h-3 w-3 text-white" />
+              </button>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {viewPhoto && (
         <div
