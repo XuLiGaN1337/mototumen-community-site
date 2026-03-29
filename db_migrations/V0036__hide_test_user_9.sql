@@ -1,0 +1,2 @@
+UPDATE t_p21120869_mototumen_community_.users SET is_hidden = true, name = 'Скрыт', role = 'banned' WHERE id = 9;
+UPDATE t_p21120869_mototumen_community_.user_profiles SET is_public = false WHERE user_id = 9;

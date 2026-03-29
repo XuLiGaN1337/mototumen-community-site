@@ -1,0 +1,1 @@
+ALTER TABLE t_p21120869_mototumen_community_.users ADD COLUMN IF NOT EXISTS is_hidden boolean NOT NULL DEFAULT false;

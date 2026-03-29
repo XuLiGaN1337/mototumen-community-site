@@ -782,7 +782,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             else:
                 search_cond = f"AND (u.name ILIKE '%{search}%' OR u.username ILIKE '%{search}%')" if search else ""
-                cur.execute(f"SELECT u.id, u.name, u.username, u.created_at, p.location, p.avatar_url FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE p.is_public = true {search_cond} ORDER BY u.created_at DESC LIMIT 100")
+                cur.execute(f"SELECT u.id, u.name, u.username, u.created_at, p.location, p.avatar_url FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE p.is_public = true AND u.is_hidden = false {search_cond} ORDER BY u.created_at DESC LIMIT 100")
                 users = cur.fetchall()
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'users': [dict(u) for u in users]}, default=str), 'isBase64Encoded': False}
         
