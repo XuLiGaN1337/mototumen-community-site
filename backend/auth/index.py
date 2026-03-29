@@ -17,9 +17,7 @@ import jwt
 import requests
 
 TELEGRAM_CHANNELS = [
-    "-1002441055201",  # Numeric chat_id (primary)
-    "@MotoTyumen",     # Username
-    "https://t.me/MotoTyumen"  # URL
+    "-1002441055201",  # Numeric chat_id (supergroup)
 ]
 
 def get_db_connection():
