@@ -161,7 +161,7 @@ def handler(event: dict, context: dict) -> dict:
                 [
                     {
                         "text": "🏍 Войти на сайт",
-                        "url": auth_url
+                        "web_app": {"url": auth_url}
                     }
                 ]
             ]
