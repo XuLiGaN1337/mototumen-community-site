@@ -75,6 +75,8 @@ def check_channel_subscription(user_id: int, username: str = None) -> bool:
     
     print(f"[CHECK_SUBSCRIPTION] Checking user {user_id} in MotoTyumen group")
     
+    got_valid_response = False
+    
     for channel_id in TELEGRAM_CHANNELS:
         print(f"[CHECK_SUBSCRIPTION] Trying channel variant: {channel_id}")
         
@@ -87,6 +89,7 @@ def check_channel_subscription(user_id: int, username: str = None) -> bool:
                 data = json.loads(response_text)
                 
                 if data.get('ok'):
+                    got_valid_response = True
                     status = data.get('result', {}).get('status', '')
                     is_member = status in ['member', 'administrator', 'creator']
                     
@@ -94,6 +97,9 @@ def check_channel_subscription(user_id: int, username: str = None) -> bool:
                     
                     if is_member:
                         return True
+                    if status in ['left', 'kicked']:
+                        print(f"[CHECK_SUBSCRIPTION] User explicitly not in group: {status}")
+                        return False
                 else:
                     error_desc = data.get('description', 'Unknown error')
                     print(f"[CHECK_SUBSCRIPTION] ❌ FAILED {channel_id}: {error_desc}")
@@ -104,7 +110,11 @@ def check_channel_subscription(user_id: int, username: str = None) -> bool:
         except Exception as e:
             print(f"[CHECK_SUBSCRIPTION] ❌ Error with {channel_id}: {e}")
     
-    print(f"[CHECK_SUBSCRIPTION] ❌ ALL VARIANTS FAILED for user {user_id}")
+    if not got_valid_response:
+        print(f"[CHECK_SUBSCRIPTION] ⚠️ ALL API CALLS FAILED — allowing auth (bot config issue)")
+        return True
+    
+    print(f"[CHECK_SUBSCRIPTION] ❌ User {user_id} not found in group")
     return False
 
 def upload_avatar_to_s3(photo_url: str, user_id: int) -> Optional[str]:
