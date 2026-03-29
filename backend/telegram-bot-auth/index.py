@@ -19,7 +19,8 @@ def send_message(bot_token: str, chat_id: int, text: str, reply_markup: dict = N
     payload = {
         "chat_id": chat_id,
         "text": text,
-        "parse_mode": "HTML"
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True
     }
     if reply_markup:
         payload["reply_markup"] = json.dumps(reply_markup)
@@ -161,7 +162,7 @@ def handler(event: dict, context: dict) -> dict:
                 [
                     {
                         "text": "🏍 Войти на сайт",
-                        "web_app": {"url": auth_url}
+                        "url": auth_url
                     }
                 ]
             ]
