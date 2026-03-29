@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Get channel member count",
+      "method": "GET",
+      "path": "/?channel=MotoTyumen",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "memberCount": "number",
+        "title": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
