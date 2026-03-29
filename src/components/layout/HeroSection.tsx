@@ -1,19 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
-import { getCachedTelegramData } from "@/api/telegram";
 
 const HeroSection: React.FC = () => {
-  const [memberCount, setMemberCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadData = async () => {
-      const data = await getCachedTelegramData();
-      setMemberCount(data.memberCount);
-    };
-    loadData();
-  }, []);
-
   const handleJoinCommunity = () => {
     window.open("https://t.me/MotoTyumen", "_blank");
   };
@@ -51,9 +40,7 @@ const HeroSection: React.FC = () => {
               onClick={handleJoinCommunity}
             >
               <Icon name="Users" className="h-5 w-5 mr-2" />
-              {memberCount
-                ? `Присоединиться • ${memberCount}+ участников`
-                : "Присоединиться"}
+              Присоединиться
             </Button>
 
             <Button
