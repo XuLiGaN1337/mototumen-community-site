@@ -1,7 +1,7 @@
 """
-Business: User authentication + profiles + garage + friends
+Business: User authentication + profiles + garage + friends + photos
 Args: event with httpMethod, body, headers with X-Auth-Token; context with request_id  
-Returns: HTTP response with auth tokens, user data, profiles, vehicles, friends data
+Returns: HTTP response with auth tokens, user data, profiles, vehicles, friends, photos data
 """
 import json
 import os
@@ -143,6 +143,43 @@ def upload_avatar_to_s3(photo_url: str, user_id: int) -> Optional[str]:
         print(f"[AVATAR UPLOAD ERROR] {str(e)}")
         return None
 
+def move_avatar_to_photos(cur, user_id: int):
+    """Move current avatar to user_photos before replacing"""
+    cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    if row and row['avatar_url'] and row['avatar_url'].startswith('http'):
+        cur.execute(
+            "INSERT INTO user_photos (user_id, photo_url, source) VALUES (%s, %s, 'avatar')",
+            (user_id, row['avatar_url'])
+        )
+
+def get_telegram_photo_url(bot_token: str, telegram_id: int) -> Optional[str]:
+    """Get user's current profile photo URL from Telegram API"""
+    try:
+        url = f"https://api.telegram.org/bot{bot_token}/getUserProfilePhotos?user_id={telegram_id}&limit=1"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+        
+        if not data.get('ok') or data['result']['total_count'] == 0:
+            return None
+        
+        file_id = data['result']['photos'][0][-1]['file_id']
+        
+        url2 = f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}"
+        req2 = urllib.request.Request(url2)
+        with urllib.request.urlopen(req2, timeout=5) as resp2:
+            file_data = json.loads(resp2.read().decode())
+        
+        if not file_data.get('ok'):
+            return None
+        
+        file_path = file_data['result']['file_path']
+        return f"https://api.telegram.org/file/bot{bot_token}/{file_path}"
+    except Exception as e:
+        print(f"[GET_TG_PHOTO] Error: {e}")
+        return None
+
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '/')
@@ -272,6 +309,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     auth_user = cur.fetchone()
                     
                     if auth_user:
+                        bot_token_for_photo = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
+                        tg_photo = get_telegram_photo_url(bot_token_for_photo, telegram_id) if bot_token_for_photo else None
+                        if tg_photo:
+                            move_avatar_to_photos(cur, auth_user['id'])
+                            s3_url = upload_avatar_to_s3(tg_photo, auth_user['id'])
+                            if s3_url:
+                                cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
+                        
                         new_token = generate_token()
                         expires_at = datetime.now() + timedelta(days=30)
                         
@@ -398,19 +443,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 auth_user = cur.fetchone()
                 
                 if auth_user:
-                    if photo_url:
-                        s3_url = upload_avatar_to_s3(photo_url, auth_user['id'])
-                        avatar_to_save = s3_url if s3_url else photo_url
-                        cur.execute(
-                            "UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s",
-                            (avatar_to_save, auth_user['id'])
-                        )
+                    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
+                    tg_photo = get_telegram_photo_url(bot_token, telegram_id) if bot_token else None
+                    actual_photo = tg_photo or photo_url
+                    
+                    if actual_photo:
+                        move_avatar_to_photos(cur, auth_user['id'])
+                        s3_url = upload_avatar_to_s3(actual_photo, auth_user['id'])
+                        if s3_url:
+                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
                     
                     if username:
-                        cur.execute(
-                            "UPDATE user_profiles SET telegram = %s WHERE user_id = %s",
-                            (username, auth_user['id'])
-                        )
+                        cur.execute("UPDATE user_profiles SET telegram = %s WHERE user_id = %s", (username, auth_user['id']))
                     
                     new_token = generate_token()
                     expires_at = datetime.now() + timedelta(days=30)
@@ -786,6 +830,45 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 users = cur.fetchall()
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'users': [dict(u) for u in users]}, default=str), 'isBase64Encoded': False}
         
+        # === PHOTOS ===
+        elif 'photo' in path or query_params.get('action') == 'photos':
+            if not user:
+                return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Auth required'}), 'isBase64Encoded': False}
+            
+            if method == 'GET':
+                cur.execute(f"SELECT id, photo_url, source, created_at FROM user_photos WHERE user_id = {user['id']} ORDER BY created_at DESC")
+                photos = cur.fetchall()
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'photos': [dict(p) for p in photos]}, default=str), 'isBase64Encoded': False}
+            
+            elif method == 'DELETE':
+                photo_id = query_params.get('photo_id')
+                if not photo_id:
+                    return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'photo_id required'}), 'isBase64Encoded': False}
+                cur.execute(f"SELECT id FROM user_photos WHERE id = {photo_id} AND user_id = {user['id']}")
+                photo = cur.fetchone()
+                if not photo:
+                    return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Not found'}), 'isBase64Encoded': False}
+                cur.execute(f"DELETE FROM user_photos WHERE id = {photo_id} AND user_id = {user['id']}")
+                conn.commit()
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Photo removed'}), 'isBase64Encoded': False}
+            
+            elif method == 'POST':
+                body = json.loads(event.get('body', '{}'))
+                action_type = body.get('action')
+                if action_type == 'set_as_avatar':
+                    photo_id = body.get('photo_id')
+                    if not photo_id:
+                        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'photo_id required'}), 'isBase64Encoded': False}
+                    cur.execute(f"SELECT photo_url FROM user_photos WHERE id = {photo_id} AND user_id = {user['id']}")
+                    photo = cur.fetchone()
+                    if not photo:
+                        return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Not found'}), 'isBase64Encoded': False}
+                    move_avatar_to_photos(cur, user['id'])
+                    cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (photo['photo_url'], user['id']))
+                    cur.execute(f"DELETE FROM user_photos WHERE id = {photo_id} AND user_id = {user['id']}")
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Avatar updated'}), 'isBase64Encoded': False}
+        
         # === PROFILE (my profile) ===
         else:
             if not user:
@@ -826,10 +909,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 badges_cnt = cur.fetchone()
                 badges_count = badges_cnt['cnt'] if badges_cnt else 0
                 
-                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'profile': dict(profile) if profile else {}, 'favorites': [dict(f) for f in favorites], 'pending_friend_requests': pending_count, 'friends_count': friends_count, 'vehicles_count': vehicles_count, 'favorites_count': favorites_count, 'achievements_count': achievements_count, 'total_achievements': total_achievements, 'badges_count': badges_count}, default=str), 'isBase64Encoded': False}
+                cur.execute(f"SELECT id, photo_url, source, created_at FROM user_photos WHERE user_id = {user['id']} ORDER BY created_at DESC")
+                photos = cur.fetchall()
+                
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'profile': dict(profile) if profile else {}, 'favorites': [dict(f) for f in favorites], 'pending_friend_requests': pending_count, 'friends_count': friends_count, 'vehicles_count': vehicles_count, 'favorites_count': favorites_count, 'achievements_count': achievements_count, 'total_achievements': total_achievements, 'badges_count': badges_count, 'photos': [dict(p) for p in photos]}, default=str), 'isBase64Encoded': False}
             
             elif method == 'PUT':
                 body = json.loads(event.get('body', '{}'))
+                
+                if body.get('remove_avatar'):
+                    move_avatar_to_photos(cur, user['id'])
+                    cur.execute("UPDATE user_profiles SET avatar_url = NULL, updated_at = NOW() WHERE user_id = %s", (user['id'],))
+                    conn.commit()
+                    return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Avatar removed'}), 'isBase64Encoded': False}
+                
+                if 'avatar_url' in body and body['avatar_url']:
+                    move_avatar_to_photos(cur, user['id'])
+                
                 updates = []
                 
                 for field in ['phone', 'bio', 'location', 'avatar_url', 'gender', 'callsign', 'telegram']:

@@ -13,12 +13,20 @@ import { ProfileEditModal } from "@/components/profile/ProfileEditModal";
 import { FavoritesSection } from "@/components/profile/FavoritesSection";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { PhotoGallery } from "@/components/profile/PhotoGallery";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
 interface FavoriteItem {
   item_type: string;
   item_id: number;
+  created_at: string;
+}
+
+interface UserPhoto {
+  id: number;
+  photo_url: string;
+  source: string;
   created_at: string;
 }
 
@@ -30,10 +38,12 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [profileData, setProfileData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("profile");
   const [pendingFriendRequests, setPendingFriendRequests] = useState(0);
-  
+  const [photos, setPhotos] = useState<UserPhoto[]>([]);
+
   const [editForm, setEditForm] = useState({
     name: user?.name || "",
     phone: user?.phone || "",
@@ -81,6 +91,7 @@ const Profile = () => {
         setProfileData(data);
         setFavorites(data.favorites || []);
         setPendingFriendRequests(data.pending_friend_requests || 0);
+        setPhotos(data.photos || []);
         
         setEditForm({
           name: data.profile.name || user?.name || "",
@@ -131,6 +142,7 @@ const Profile = () => {
     console.log('[Profile] Начинаем сохранение профиля', { editForm, hasAvatarFile: !!avatarFile });
     
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates: any = {
         phone: editForm.phone,
         bio: editForm.bio,
@@ -185,7 +197,60 @@ const Profile = () => {
     }
   };
 
-  const handleEditFormChange = (field: string, value: any) => {
+  const handleRemoveAvatar = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      await fetch(AUTH_API, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+        body: JSON.stringify({ remove_avatar: true }),
+      });
+      toast({ title: "Аватар убран", description: "Фото перенесено в галерею" });
+      await loadProfile();
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetPhotoAsAvatar = async (photoId: number) => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      await fetch(`${AUTH_API}?action=photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+        body: JSON.stringify({ action: 'set_as_avatar', photo_id: photoId }),
+      });
+      toast({ title: "Аватар обновлён" });
+      await loadProfile();
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemovePhoto = async (photoId: number) => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      await fetch(`${AUTH_API}?action=photos&photo_id=${photoId}`, {
+        method: 'DELETE',
+        headers: { 'X-Auth-Token': token },
+      });
+      setPhotos(prev => prev.filter(p => p.id !== photoId));
+      toast({ title: "Фото удалено" });
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditFormChange = (field: string, value: string) => {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -203,7 +268,7 @@ const Profile = () => {
               if (activeTab !== "profile") {
                 setActiveTab("profile");
               } else {
-                window.history.length > 1 ? navigate(-1) : navigate('/');
+                if (window.history.length > 1) { navigate(-1); } else { navigate('/'); }
               }
             }}
             className="text-gray-400 hover:text-white"
@@ -237,6 +302,15 @@ const Profile = () => {
                 />
                 
                 <FavoritesSection favorites={favorites} />
+
+                <PhotoGallery
+                  photos={photos}
+                  onSetAsAvatar={handleSetPhotoAsAvatar}
+                  onRemovePhoto={handleRemovePhoto}
+                  onRemoveAvatar={handleRemoveAvatar}
+                  currentAvatarUrl={profileData?.profile?.avatar_url}
+                  loading={loading}
+                />
               </div>
 
               <div className="space-y-4">
