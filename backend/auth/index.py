@@ -152,10 +152,15 @@ def upload_avatar_to_s3(photo_url: str, user_id: int) -> Optional[str]:
         return None
 
 def move_avatar_to_photos(cur, user_id: int):
-    """Move current avatar to user_photos before replacing (max 3 photos)"""
+    """Move current avatar to user_photos before replacing — only if not already there (max 3 photos)"""
     cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     if row and row['avatar_url'] and row['avatar_url'].startswith('http'):
+        # Не дублируем — проверяем что такого фото ещё нет в галерее
+        cur.execute("SELECT id FROM user_photos WHERE user_id = %s AND photo_url = %s", (user_id, row['avatar_url']))
+        already_exists = cur.fetchone()
+        if already_exists:
+            return
         cur.execute(f"SELECT COUNT(*) as cnt FROM user_photos WHERE user_id = {user_id}")
         cnt = cur.fetchone()
         if cnt and cnt['cnt'] >= 3:
@@ -324,13 +329,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     auth_user = cur.fetchone()
                     
                     if auth_user:
-                        bot_token_for_photo = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
-                        tg_photo = get_telegram_photo_url(bot_token_for_photo, telegram_id) if bot_token_for_photo else None
-                        if tg_photo:
-                            move_avatar_to_photos(cur, auth_user['id'])
-                            s3_url = upload_avatar_to_s3(tg_photo, auth_user['id'])
-                            if s3_url:
-                                cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
+                        # Обновляем аватар только если у пользователя ещё нет своего из S3
+                        cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (auth_user['id'],))
+                        current_profile = cur.fetchone()
+                        has_s3_avatar = current_profile and current_profile.get('avatar_url') and 'cdn.poehali.dev' in (current_profile.get('avatar_url') or '')
+                        if not has_s3_avatar:
+                            bot_token_for_photo = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
+                            tg_photo = get_telegram_photo_url(bot_token_for_photo, telegram_id) if bot_token_for_photo else None
+                            if tg_photo:
+                                s3_url = upload_avatar_to_s3(tg_photo, auth_user['id'])
+                                if s3_url:
+                                    cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
                         
                         new_token = generate_token()
                         expires_at = datetime.now() + timedelta(days=30)
@@ -458,16 +467,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 auth_user = cur.fetchone()
                 
                 if auth_user:
-                    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
-                    tg_photo = get_telegram_photo_url(bot_token, telegram_id) if bot_token else None
-                    actual_photo = tg_photo or photo_url
-                    
-                    if actual_photo:
-                        move_avatar_to_photos(cur, auth_user['id'])
-                        s3_url = upload_avatar_to_s3(actual_photo, auth_user['id'])
-                        if s3_url:
-                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
-                    
+                    # Обновляем аватар только если у пользователя ещё нет своего из S3
+                    cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (auth_user['id'],))
+                    current_profile = cur.fetchone()
+                    has_s3_avatar = current_profile and current_profile.get('avatar_url') and 'cdn.poehali.dev' in (current_profile.get('avatar_url') or '')
+                    if not has_s3_avatar:
+                        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
+                        tg_photo = get_telegram_photo_url(bot_token, telegram_id) if bot_token else None
+                        actual_photo = tg_photo or photo_url
+                        if actual_photo:
+                            s3_url = upload_avatar_to_s3(actual_photo, auth_user['id'])
+                            if s3_url:
+                                cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
+
                     if username:
                         cur.execute("UPDATE user_profiles SET telegram = %s WHERE user_id = %s", (username, auth_user['id']))
                     
@@ -902,7 +914,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             cur.execute(
                 """
-                SELECT u.id, u.email, u.name, u.role, u.created_at, p.callsign
+                SELECT u.id, u.email, u.name, u.role, u.created_at,
+                       p.callsign, p.avatar_url, p.phone, p.bio, p.location, p.gender
                 FROM users u
                 JOIN user_sessions s ON u.id = s.user_id
                 LEFT JOIN user_profiles p ON u.id = p.user_id
@@ -929,7 +942,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'email': verify_user['email'],
                         'name': verify_user['name'],
                         'role': verify_user['role'],
-                        'callsign': verify_user.get('callsign')
+                        'callsign': verify_user.get('callsign'),
+                        'avatar_url': verify_user.get('avatar_url'),
+                        'phone': verify_user.get('phone'),
+                        'bio': verify_user.get('bio'),
+                        'location': verify_user.get('location'),
+                        'gender': verify_user.get('gender'),
                     }
                 }),
                 'isBase64Encoded': False
