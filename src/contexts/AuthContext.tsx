@@ -8,6 +8,17 @@ import React, {
 import { checkRateLimit, authRateLimiter } from "@/utils/rateLimiter";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
+const YANDEX_CLIENT_ID = 'dd12a9071f974d83b81ae726349f2237';
+export const YANDEX_REDIRECT_URI = `${window.location.origin}/yandex-callback`;
+export const getYandexAuthUrl = (state?: string) => {
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: YANDEX_CLIENT_ID,
+    redirect_uri: YANDEX_REDIRECT_URI,
+    ...(state ? { state } : {}),
+  });
+  return `https://oauth.yandex.ru/authorize?${params.toString()}`;
+};
 
 interface UserProfile {
   id: number;
@@ -37,6 +48,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   loginWithTelegram: (telegramUser: TelegramUser) => Promise<void>;
+  loginWithYandex: (code: string) => Promise<void>;
+  linkYandex: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
@@ -123,6 +136,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithYandex = async (code: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(AUTH_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'yandex_auth',
+          code,
+          redirect_uri: YANDEX_REDIRECT_URI,
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Yandex auth failed');
+      }
+      const data = await response.json();
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('authToken', data.token);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const linkYandex = async (code: string) => {
+    if (!token) throw new Error('Not authenticated');
+    const response = await fetch(AUTH_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+      body: JSON.stringify({
+        action: 'link_yandex',
+        code,
+        redirect_uri: YANDEX_REDIRECT_URI,
+      }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Link failed');
+    }
+  };
+
   const logout = async () => {
     if (token) {
       try {
@@ -187,6 +242,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAdmin: user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'moderator',
     isLoading,
     loginWithTelegram,
+    loginWithYandex,
+    linkYandex,
     logout,
     updateProfile,
   };

@@ -12,16 +12,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { UserProfile, useAuth } from "@/contexts/AuthContext";
-// Auth через бота — виджет больше не нужен
 import { getRoleEmoji } from "@/components/admin/RoleBadge";
+import AuthModal from "@/components/AuthModal";
 
-interface HeaderProps {}
+type HeaderProps = object;
 
 const ADMIN_API = 'https://functions.poehali.dev/a4bf4de7-33a4-406c-95cc-0529c16d6677';
 
 const Header: React.FC<HeaderProps> = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // showTelegramAuth removed — auth через бота
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const [hasOrganization, setHasOrganization] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -248,14 +248,15 @@ const Header: React.FC<HeaderProps> = () => {
               </div>
             ) : (
               <Button
-                onClick={() => window.open('https://t.me/auth_mototyumen_bot?start=auth', '_blank')}
+                onClick={() => setShowAuthModal(true)}
                 className="bg-[#0088cc] hover:bg-[#0077bb] text-white font-medium transition-all"
                 size="sm"
               >
-                <Icon name="Send" className="h-4 w-4 mr-2" />
+                <Icon name="LogIn" className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Войти</span>
               </Button>
             )}
+            <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
             {/* Mobile menu button */}
             <Button

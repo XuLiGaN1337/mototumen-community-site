@@ -538,6 +538,203 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
             
+            elif action == 'yandex_auth':
+                yandex_code = body.get('code')
+                redirect_uri = body.get('redirect_uri')
+                
+                if not yandex_code:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'code required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                client_id = os.environ.get('YANDEX_CLIENT_ID')
+                client_secret = os.environ.get('YANDEX_CLIENT_SECRET')
+                
+                token_resp = requests.post(
+                    'https://oauth.yandex.ru/token',
+                    data={
+                        'grant_type': 'authorization_code',
+                        'code': yandex_code,
+                        'client_id': client_id,
+                        'client_secret': client_secret,
+                        'redirect_uri': redirect_uri,
+                    },
+                    timeout=10
+                )
+                
+                if token_resp.status_code != 200:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Yandex token exchange failed', 'details': token_resp.text}),
+                        'isBase64Encoded': False
+                    }
+                
+                ya_token = token_resp.json().get('access_token')
+                
+                info_resp = requests.get(
+                    'https://login.yandex.ru/info',
+                    headers={'Authorization': f'OAuth {ya_token}'},
+                    params={'format': 'json'},
+                    timeout=10
+                )
+                
+                if info_resp.status_code != 200:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Yandex userinfo failed'}),
+                        'isBase64Encoded': False
+                    }
+                
+                ya_info = info_resp.json()
+                yandex_id = str(ya_info.get('id'))
+                ya_name = ya_info.get('display_name') or ya_info.get('real_name') or ya_info.get('login', '')
+                ya_email = ya_info.get('default_email', f'ya_{yandex_id}@yandex.user')
+                ya_avatar_id = ya_info.get('default_avatar_id')
+                ya_photo_url = f"https://avatars.yandex.net/get-yapic/{ya_avatar_id}/islands-200" if ya_avatar_id else None
+                
+                cur.execute("SELECT id, name, email, role FROM users WHERE yandex_id = %s", (yandex_id,))
+                auth_user = cur.fetchone()
+                
+                if auth_user:
+                    if ya_photo_url:
+                        move_avatar_to_photos(cur, auth_user['id'])
+                        s3_url = upload_avatar_to_s3(ya_photo_url, auth_user['id'])
+                        if s3_url:
+                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
+                    
+                    new_token = generate_token()
+                    expires_at = datetime.now() + timedelta(days=30)
+                    cur.execute(
+                        "INSERT INTO user_sessions (user_id, token, expires_at) VALUES (%s, %s, %s)",
+                        (auth_user['id'], new_token, expires_at)
+                    )
+                    conn.commit()
+                    
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({
+                            'token': new_token,
+                            'user': {
+                                'id': auth_user['id'],
+                                'name': auth_user['name'],
+                                'email': auth_user['email'],
+                                'role': auth_user['role']
+                            }
+                        }),
+                        'isBase64Encoded': False
+                    }
+                else:
+                    cur.execute(
+                        "INSERT INTO users (yandex_id, name, email, password_hash, role) VALUES (%s, %s, %s, %s, %s) RETURNING id, name, email, role",
+                        (yandex_id, ya_name, ya_email, '', 'user')
+                    )
+                    auth_user = cur.fetchone()
+                    
+                    cur.execute("INSERT INTO user_profiles (user_id) VALUES (%s)", (auth_user['id'],))
+                    
+                    if ya_photo_url:
+                        s3_url = upload_avatar_to_s3(ya_photo_url, auth_user['id'])
+                        if s3_url:
+                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
+                    
+                    new_token = generate_token()
+                    expires_at = datetime.now() + timedelta(days=30)
+                    cur.execute(
+                        "INSERT INTO user_sessions (user_id, token, expires_at) VALUES (%s, %s, %s)",
+                        (auth_user['id'], new_token, expires_at)
+                    )
+                    conn.commit()
+                    
+                    notify_ceo(
+                        f"🎉 <b>Новая регистрация (Яндекс)</b>\n\nПользователь: {ya_name}\nEmail: {ya_email}\nID: {auth_user['id']}",
+                        'new_user'
+                    )
+                    
+                    return {
+                        'statusCode': 201,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({
+                            'token': new_token,
+                            'user': {
+                                'id': auth_user['id'],
+                                'name': auth_user['name'],
+                                'email': auth_user['email'],
+                                'role': auth_user['role']
+                            }
+                        }),
+                        'isBase64Encoded': False
+                    }
+
+            elif action == 'link_yandex':
+                if not user:
+                    return {
+                        'statusCode': 401,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Auth required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                yandex_code = body.get('code')
+                redirect_uri = body.get('redirect_uri')
+                client_id = os.environ.get('YANDEX_CLIENT_ID')
+                client_secret = os.environ.get('YANDEX_CLIENT_SECRET')
+                
+                token_resp = requests.post(
+                    'https://oauth.yandex.ru/token',
+                    data={
+                        'grant_type': 'authorization_code',
+                        'code': yandex_code,
+                        'client_id': client_id,
+                        'client_secret': client_secret,
+                        'redirect_uri': redirect_uri,
+                    },
+                    timeout=10
+                )
+                
+                if token_resp.status_code != 200:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Yandex token exchange failed'}),
+                        'isBase64Encoded': False
+                    }
+                
+                ya_token = token_resp.json().get('access_token')
+                info_resp = requests.get(
+                    'https://login.yandex.ru/info',
+                    headers={'Authorization': f'OAuth {ya_token}'},
+                    params={'format': 'json'},
+                    timeout=10
+                )
+                ya_info = info_resp.json()
+                yandex_id = str(ya_info.get('id'))
+                
+                cur.execute("SELECT id FROM users WHERE yandex_id = %s AND id != %s", (yandex_id, user['id']))
+                already_used = cur.fetchone()
+                if already_used:
+                    return {
+                        'statusCode': 409,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Этот Яндекс аккаунт уже привязан к другому профилю'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute("UPDATE users SET yandex_id = %s WHERE id = %s", (yandex_id, user['id']))
+                conn.commit()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'success': True, 'message': 'Яндекс аккаунт привязан'}),
+                    'isBase64Encoded': False
+                }
+
             elif action == 'logout':
                 logout_token = get_header(event.get('headers', {}), 'X-Auth-Token')
                 

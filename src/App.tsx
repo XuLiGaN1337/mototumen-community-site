@@ -17,6 +17,7 @@ import Schools from "./pages/Schools";
 import Service from "./pages/Service";
 import Profile from "./pages/Profile";
 import AuthCallback from "./pages/AuthCallback";
+import YandexCallback from "./pages/YandexCallback";
 import Announcements from "./pages/Announcements";
 import Events from "./pages/Events";
 import { UsersPage } from "./pages/UsersPage";
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/organization-register" element={<OrganizationRegister />} />
             <Route path="/organization-success" element={<OrganizationSuccess />} />
             <Route path="/auth-callback" element={<AuthCallback />} />
+            <Route path="/yandex-callback" element={<YandexCallback />} />
             <Route
               path="/stores"
               element={
