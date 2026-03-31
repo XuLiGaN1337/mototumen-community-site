@@ -89,7 +89,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Все действия требуют токен (индивидуальные пароли!)
         headers = event.get('headers', {})
-        token = get_header(headers, 'X-Auth-Token')
+        token = get_header(headers, 'X-Auth-Token') or get_header(headers, 'X-Authorization')
+        print(f"[ADMIN] method={method} action={action} token={'YES' if token else 'NO'} headers={list(headers.keys())}")
         
         if not token:
             return {
@@ -130,7 +131,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Проверка: есть ли пароль у текущего админа
         if method == 'GET' and action == 'my-admin-password-status':
-            has_password = user.get('admin_password_hash') is not None
+            has_password = bool(user.get('admin_password_hash'))
+            print(f"[PASSWORD STATUS] user_id={user['id']} has_password={has_password} hash_val={repr(user.get('admin_password_hash'))[:20] if user.get('admin_password_hash') else None}")
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
