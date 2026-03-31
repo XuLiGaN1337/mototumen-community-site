@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import requests
 
 
-SITE_URL = "https://mototumen-community-site.poehali.dev"
+SITE_URL = "https://mototyumen.ru"
 
 
 def send_message(bot_token: str, chat_id: int, text: str, reply_markup: dict = None):
