@@ -134,21 +134,21 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Legal Links & Copyright */}
-        <div className="border-t border-zinc-800 mt-8 pt-6 space-y-4">
-          <div className="flex flex-wrap justify-center gap-3 text-sm text-zinc-400">
+        <div className="border-t border-zinc-800 mt-6 sm:mt-8 pt-5 sm:pt-6 space-y-3">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-2 sm:gap-3 text-xs sm:text-sm text-zinc-400">
             <a href="/privacy" className="hover:text-accent transition-colors">
               Политика конфиденциальности
             </a>
-            <span className="text-zinc-700">•</span>
+            <span className="hidden sm:inline text-zinc-700">•</span>
             <a href="/terms" className="hover:text-accent transition-colors">
               Пользовательское соглашение
             </a>
-            <span className="text-zinc-700">•</span>
+            <span className="hidden sm:inline text-zinc-700">•</span>
             <a href="/disclaimer" className="hover:text-accent transition-colors">
               Отказ от ответственности
             </a>
           </div>
-          <p className="text-center text-zinc-400" style={{ fontFamily: "Open Sans, sans-serif" }}>
+          <p className="text-center text-xs sm:text-sm text-zinc-400" style={{ fontFamily: "Open Sans, sans-serif" }}>
             © 2024 МОТОТюмень. Все права защищены.
           </p>
         </div>

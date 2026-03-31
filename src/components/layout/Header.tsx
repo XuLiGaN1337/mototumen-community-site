@@ -58,16 +58,16 @@ const Header: React.FC<HeaderProps> = () => {
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <div 
-            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity min-w-0"
             onClick={() => setShowDebug(!showDebug)}
             title="Кликните для отладки"
           >
             <img
               src="https://cdn.poehali.dev/files/972cbcb6-2462-43d5-8df9-3cc8a591f756.png"
               alt="МотоТюмень"
-              className="w-12 h-12 rounded-full object-cover"
+              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
             />
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white font-['Oswald']">
+            <h1 className="text-base sm:text-xl md:text-2xl font-bold text-white font-['Oswald'] truncate">
               МОТО<span className="text-[#004488]">ТЮМЕНЬ</span>
             </h1>
           </div>
@@ -272,107 +272,83 @@ const Header: React.FC<HeaderProps> = () => {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <nav className="md:hidden py-3 sm:py-4 border-t border-dark-700">
-            <div className="space-y-1 sm:space-y-2">
-              <a
-                href="/"
-                className="block py-2 px-4 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded"
-              >
-                Главная
-              </a>
-              <a
-                href="/shop"
-                className="block py-2 px-4 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded"
-              >
-                Магазин
-              </a>
-              <a
-                href="/store"
-                className="block py-2 px-4 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded"
-              >
-                ZM STORE
-              </a>
-              <a
-                href="/service"
-                className="block py-2 px-4 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded"
-              >
-                Сервис
-              </a>
-              <a
-                href="/schools"
-                className="block py-2 px-4 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded"
-              >
-                Мотошколы
-              </a>
+          <nav className="md:hidden border-t border-dark-700">
+            <div className="py-2">
+              {[
+                { href: "/", label: "Главная", icon: "Home" },
+                { href: "/shop", label: "Магазин", icon: "ShoppingBag" },
+                { href: "/store", label: "ZM STORE", icon: "Store" },
+                { href: "/service", label: "Сервис", icon: "Wrench" },
+                { href: "/schools", label: "Мотошколы", icon: "GraduationCap" },
+                { href: "/events", label: "События", icon: "Calendar" },
+                { href: "/users", label: "Участники", icon: "Users" },
+              ].map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 py-3 px-4 text-gray-300 hover:text-white hover:bg-dark-800 active:bg-dark-700 transition-colors text-base"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Icon name={item.icon as "Home"} className="h-5 w-5 text-[#004488] flex-shrink-0" />
+                  {item.label}
+                </a>
+              ))}
 
-              <a
-                href="/events"
-                className="block py-2 px-4 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded"
-              >
-                События
-              </a>
-
-              {/* Mobile version of "Полезное" menu */}
-              <div className="space-y-1">
-                <div className="py-2 px-4 text-gray-300 font-semibold">
-                  Полезное
-                </div>
-                <a
-                  href="/ads"
-                  className="block py-2 px-6 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded text-sm"
-                >
-                  Объявления
-                </a>
-                <a
-                  href="/lost-found"
-                  className="block py-2 px-6 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded text-sm"
-                >
-                  Потеряшки/Находки
-                </a>
-                <a
-                  href="/upcoming-events"
-                  className="block py-2 px-6 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded text-sm"
-                >
-                  Ближайшие события
-                </a>
-                <a
-                  href="/emergency"
-                  className="block py-2 px-6 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded text-sm"
-                >
-                  Экстренная помощь
-                </a>
-                <a
-                  href="/help"
-                  className="block py-2 px-6 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded text-sm"
-                >
-                  Помощь на дороге
-                </a>
-                <a
-                  href="/map"
-                  className="block py-2 px-6 text-gray-300 hover:text-[#004488] hover:bg-dark-800 rounded text-sm"
-                >
-                  Карта маршрутов
-                </a>
+              {/* Полезное — раздел */}
+              <div className="border-t border-dark-700 mt-1 pt-1">
+                <p className="px-4 py-2 text-xs text-gray-500 uppercase tracking-wider">Полезное</p>
+                {[
+                  { href: "/ads", label: "Объявления", icon: "FileText" },
+                  { href: "/emergency", label: "Экстренная помощь", icon: "AlertTriangle" },
+                  { href: "/help", label: "Помощь на дороге", icon: "LifeBuoy" },
+                ].map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-3 py-3 px-4 text-gray-300 hover:text-white hover:bg-dark-800 active:bg-dark-700 transition-colors text-base"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Icon name={item.icon as "FileText"} className="h-5 w-5 text-[#004488] flex-shrink-0" />
+                    {item.label}
+                  </a>
+                ))}
                 <a
                   href="/become-organization"
-                  className="block py-2 px-6 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-semibold hover:from-yellow-500 hover:to-yellow-400 rounded text-sm transition-all"
+                  className="flex items-center gap-3 py-3 px-4 text-yellow-400 hover:bg-dark-800 transition-colors text-base"
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
+                  <Icon name="Star" className="h-5 w-5 flex-shrink-0" />
                   ✨ Стать организацией
                 </a>
               </div>
 
-              {/* Auth - Mobile - только кнопка входа для неавторизованных */}
-              {!isAuthenticated && (
-                <a
-                  href="https://t.me/auth_mototyumen_bot?start=auth"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block py-2 px-4 text-white bg-[#0088cc] hover:bg-[#0077bb] rounded flex items-center transition-colors border-t border-dark-700"
-                >
-                  <Icon name="Send" className="h-4 w-4 mr-2" />
-                  Войти через Telegram
-                </a>
-              )}
+              {/* Auth в мобильном меню */}
+              <div className="border-t border-dark-700 mt-1 pt-1 px-4 pb-3">
+                {!isAuthenticated ? (
+                  <button
+                    onClick={() => { setShowAuthModal(true); setIsMobileMenuOpen(false); }}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#0088cc] hover:bg-[#0077bb] text-white rounded-lg font-medium transition-colors mt-2"
+                  >
+                    <Icon name="LogIn" className="h-5 w-5" />
+                    Войти
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 py-3">
+                    <img
+                      src={user?.avatar_url || getDefaultAvatar(user?.gender)}
+                      alt={user?.name}
+                      className="w-10 h-10 rounded-full border-2 border-[#004488] object-cover flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white font-medium truncate">{user?.name}</p>
+                      <a href="/profile" className="text-sm text-[#004488] hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Открыть профиль</a>
+                    </div>
+                    <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg">
+                      <Icon name="LogOut" className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </nav>
         )}
