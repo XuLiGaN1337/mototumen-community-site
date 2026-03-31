@@ -592,15 +592,46 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 
                 ya_info = info_resp.json()
                 yandex_id = str(ya_info.get('id'))
-                ya_name = ya_info.get('display_name') or ya_info.get('real_name') or ya_info.get('login', '')
+                ya_login = ya_info.get('login', '')
+                ya_display_name = ya_info.get('display_name') or ya_info.get('real_name') or ya_login
+                ya_first_name = ya_info.get('first_name', '')
+                ya_last_name = ya_info.get('last_name', '')
+                ya_name = ya_display_name or f"{ya_first_name} {ya_last_name}".strip() or ya_login
+                ya_gender_raw = ya_info.get('sex', '')
+                ya_gender = 'female' if ya_gender_raw == 'female' else ('male' if ya_gender_raw == 'male' else None)
                 ya_email = ya_info.get('default_email', f'ya_{yandex_id}@yandex.user')
+                ya_phone = ya_info.get('default_phone', {}).get('number') if isinstance(ya_info.get('default_phone'), dict) else None
+                ya_birthday = ya_info.get('birthday')
                 ya_avatar_id = ya_info.get('default_avatar_id')
                 ya_photo_url = f"https://avatars.yandex.net/get-yapic/{ya_avatar_id}/islands-200" if ya_avatar_id else None
-                
+
                 cur.execute("SELECT id, name, email, role FROM users WHERE yandex_id = %s", (yandex_id,))
                 auth_user = cur.fetchone()
                 
                 if auth_user:
+                    cur.execute(
+                        "UPDATE users SET yandex_login = %s, yandex_display_name = %s WHERE id = %s",
+                        (ya_login, ya_display_name, auth_user['id'])
+                    )
+                    profile_updates = []
+                    profile_vals = []
+                    if ya_phone:
+                        profile_updates.append("yandex_phone = %s")
+                        profile_vals.append(ya_phone)
+                    if ya_birthday:
+                        try:
+                            datetime.strptime(ya_birthday, '%Y-%m-%d')
+                            profile_updates.append("birthdate = %s")
+                            profile_vals.append(ya_birthday)
+                        except Exception:
+                            pass
+                    if ya_gender:
+                        profile_updates.append("gender = %s")
+                        profile_vals.append(ya_gender)
+                    if profile_updates:
+                        profile_vals.append(auth_user['id'])
+                        cur.execute(f"UPDATE user_profiles SET {', '.join(profile_updates)} WHERE user_id = %s", profile_vals)
+
                     if ya_photo_url:
                         move_avatar_to_photos(cur, auth_user['id'])
                         s3_url = upload_avatar_to_s3(ya_photo_url, auth_user['id'])
@@ -631,13 +662,32 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     }
                 else:
                     cur.execute(
-                        "INSERT INTO users (yandex_id, name, email, password_hash, role) VALUES (%s, %s, %s, %s, %s) RETURNING id, name, email, role",
-                        (yandex_id, ya_name, ya_email, '', 'user')
+                        "INSERT INTO users (yandex_id, yandex_login, yandex_display_name, name, email, password_hash, role) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id, name, email, role",
+                        (yandex_id, ya_login, ya_display_name, ya_name, ya_email, '', 'user')
                     )
                     auth_user = cur.fetchone()
                     
                     cur.execute("INSERT INTO user_profiles (user_id) VALUES (%s)", (auth_user['id'],))
-                    
+
+                    profile_updates = []
+                    profile_vals = []
+                    if ya_phone:
+                        profile_updates.append("yandex_phone = %s")
+                        profile_vals.append(ya_phone)
+                    if ya_birthday:
+                        try:
+                            datetime.strptime(ya_birthday, '%Y-%m-%d')
+                            profile_updates.append("birthdate = %s")
+                            profile_vals.append(ya_birthday)
+                        except Exception:
+                            pass
+                    if ya_gender:
+                        profile_updates.append("gender = %s")
+                        profile_vals.append(ya_gender)
+                    if profile_updates:
+                        profile_vals.append(auth_user['id'])
+                        cur.execute(f"UPDATE user_profiles SET {', '.join(profile_updates)} WHERE user_id = %s", profile_vals)
+
                     if ya_photo_url:
                         s3_url = upload_avatar_to_s3(ya_photo_url, auth_user['id'])
                         if s3_url:
@@ -652,7 +702,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     conn.commit()
                     
                     notify_ceo(
-                        f"🎉 <b>Новая регистрация (Яндекс)</b>\n\nПользователь: {ya_name}\nEmail: {ya_email}\nID: {auth_user['id']}",
+                        f"🎉 <b>Новая регистрация (Яндекс)</b>\n\nПользователь: {ya_name}\nЛогин: {ya_login}\nEmail: {ya_email}\nID: {auth_user['id']}",
                         'new_user'
                     )
                     
@@ -725,7 +775,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'isBase64Encoded': False
                     }
                 
-                cur.execute("UPDATE users SET yandex_id = %s WHERE id = %s", (yandex_id, user['id']))
+                ya_login = ya_info.get('login', '')
+                ya_display_name = ya_info.get('display_name') or ya_info.get('real_name') or ya_login
+                cur.execute(
+                    "UPDATE users SET yandex_id = %s, yandex_login = %s, yandex_display_name = %s WHERE id = %s",
+                    (yandex_id, ya_login, ya_display_name, user['id'])
+                )
                 conn.commit()
                 
                 return {
@@ -749,6 +804,47 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
         
+        # === GET LINKED ACCOUNTS ===
+        if method == 'GET' and query_params.get('action') == 'linked_accounts':
+            if not user:
+                return {
+                    'statusCode': 401,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Auth required'}),
+                    'isBase64Encoded': False
+                }
+            cur.execute(
+                "SELECT telegram_id, username AS telegram_username, yandex_id, yandex_login, yandex_display_name FROM users WHERE id = %s",
+                (user['id'],)
+            )
+            linked = cur.fetchone()
+            cur.execute(
+                "SELECT phone, birthdate, yandex_phone, gender FROM user_profiles WHERE user_id = %s",
+                (user['id'],)
+            )
+            prof = cur.fetchone()
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({
+                    'telegram': {
+                        'linked': bool(linked and linked['telegram_id']),
+                        'username': linked['telegram_username'] if linked else None,
+                    },
+                    'yandex': {
+                        'linked': bool(linked and linked['yandex_id']),
+                        'login': linked['yandex_login'] if linked else None,
+                        'display_name': linked['yandex_display_name'] if linked else None,
+                    },
+                    'profile': {
+                        'birthdate': str(prof['birthdate']) if prof and prof.get('birthdate') else None,
+                        'yandex_phone': prof['yandex_phone'] if prof else None,
+                        'gender': prof['gender'] if prof else None,
+                    }
+                }, default=str),
+                'isBase64Encoded': False
+            }
+
         # === VERIFY TOKEN (GET /auth?verify=true) ===
         if method == 'GET' and query_params.get('verify') == 'true':
             print(f"[AUTH GET VERIFY] Headers: {list(headers.keys())}")

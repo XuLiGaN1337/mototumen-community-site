@@ -14,6 +14,7 @@ import { FavoritesSection } from "@/components/profile/FavoritesSection";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { PhotoGallery } from "@/components/profile/PhotoGallery";
+import LinkedAccounts from "@/components/profile/LinkedAccounts";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
@@ -339,6 +340,7 @@ const Profile = () => {
                   pendingFriendRequests={pendingFriendRequests}
                   onTabChange={setActiveTab}
                 />
+                {token && <LinkedAccounts token={token} />}
               </div>
             </div>
           </TabsContent>
