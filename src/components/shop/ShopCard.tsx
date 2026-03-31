@@ -126,7 +126,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop, isEditing, onEdit }) => {
         </div>
       </div>
 
-      <div className="relative h-32 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+      <div className="relative h-28 sm:h-32 bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
         <Icon name={shop.icon as any} className="h-12 w-12 text-white" />
         <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm rounded px-2 py-1">
           <span className="text-white text-xs font-medium">

@@ -84,21 +84,21 @@ const SchoolPageFilters: React.FC<SchoolPageFiltersProps> = ({
   return (
     <section className="py-6 bg-background border-b border-border">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-4">
+          <div className="relative flex-1">
             <Input
               type="text"
               placeholder="Поиск мотошкол..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-9"
             />
-            <Icon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Выберите категорию" />
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Категория" />
             </SelectTrigger>
             <SelectContent>
               {categories.map(category => (

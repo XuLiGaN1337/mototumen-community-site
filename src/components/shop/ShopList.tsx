@@ -25,9 +25,9 @@ const ShopList: React.FC<ShopListProps> = ({ shops, isEditing, onEdit }) => {
   }
 
   return (
-    <section className="py-16 px-4">
+    <section className="py-6 sm:py-10 px-4">
       <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {shops.map((shop) => (
             <ShopCard
               key={shop.id}

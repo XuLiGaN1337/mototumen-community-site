@@ -102,27 +102,29 @@ const ShopPageFilters: React.FC<ShopPageFiltersProps> = ({
   return (
     <section className="py-6 bg-background border-b border-border">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-4">
-          <div className="relative flex-1 max-w-md flex gap-2">
-            <Input
-              type="text"
-              placeholder="Поиск магазинов..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && onSearch?.()}
-              className="pl-10"
-            />
-            <Icon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-4">
+          <div className="relative flex gap-2 flex-1">
+            <div className="relative flex-1">
+              <Input
+                type="text"
+                placeholder="Поиск магазинов..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && onSearch?.()}
+                className="pl-9"
+              />
+              <Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
             {onSearch && (
-              <Button onClick={onSearch} size="sm">
+              <Button onClick={onSearch} size="sm" className="px-3">
                 <Icon name="Search" className="h-4 w-4" />
               </Button>
             )}
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Выберите категорию" />
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Категория" />
             </SelectTrigger>
             <SelectContent>
               {categories.map(category => (
