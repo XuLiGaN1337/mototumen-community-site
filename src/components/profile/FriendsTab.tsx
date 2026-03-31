@@ -145,21 +145,21 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ userId, readonly = false
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-start sm:items-center justify-between gap-3">
         <div>
-          <h3 className="text-xl font-bold text-white">Друзья</h3>
-          <p className="text-zinc-400">
+          <h3 className="text-lg sm:text-xl font-bold text-white">Друзья</h3>
+          <p className="text-zinc-400 text-sm">
             {acceptedFriends.length} друзей{!readonly && ` • ${pendingRequests.length} заявок`}
           </p>
         </div>
         {!readonly && (
-        <Link to="/users">
-          <Button className="bg-accent hover:bg-accent/90">
-            <Icon name="UserPlus" className="h-4 w-4 mr-2" />
-            Найти друзей
-          </Button>
-        </Link>
+          <Link to="/users" className="flex-shrink-0">
+            <Button size="sm" className="bg-accent hover:bg-accent/90">
+              <Icon name="UserPlus" className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Найти друзей</span>
+            </Button>
+          </Link>
         )}
       </div>
 
@@ -178,32 +178,24 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ userId, readonly = false
         <div className="space-y-3">
           <h4 className="text-lg font-semibold text-white">Входящие заявки</h4>
           {pendingRequests.map((friend) => (
-            <div key={friend.id} className="bg-zinc-800 border border-accent rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
-                    {friend.avatar_url ? (
-                      <img src={friend.avatar_url} alt={friend.name} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <span className="text-white font-bold">{friend.name.charAt(0).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div>
-                    <h5 className="text-white font-semibold">{friend.name}</h5>
-                    {friend.username && <p className="text-sm text-zinc-400">@{friend.username}</p>}
-                    {friend.location && (
-                      <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
-                        <Icon name="MapPin" className="h-3 w-3" />
-                        {friend.location}
-                      </p>
-                    )}
-                  </div>
+            <div key={friend.id} className="bg-zinc-800 border border-accent rounded-lg p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  {friend.avatar_url ? (
+                    <img src={friend.avatar_url} alt={friend.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white font-bold">{friend.name.charAt(0).toUpperCase()}</span>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => acceptFriend(friend.id)} className="bg-green-600 hover:bg-green-700">
+                <div className="flex-1 min-w-0">
+                  <h5 className="text-white font-semibold truncate">{friend.name}</h5>
+                  {friend.username && <p className="text-sm text-zinc-400">@{friend.username}</p>}
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button size="sm" onClick={() => acceptFriend(friend.id)} className="bg-green-600 hover:bg-green-700 px-3">
                     <Icon name="Check" className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => rejectFriend(friend.id)} className="border-zinc-700">
+                  <Button size="sm" variant="outline" onClick={() => rejectFriend(friend.id)} className="border-zinc-700 px-3">
                     <Icon name="X" className="h-4 w-4" />
                   </Button>
                 </div>
@@ -218,23 +210,23 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ userId, readonly = false
           <h4 className="text-lg font-semibold text-white">Мои друзья</h4>
           <div className="grid gap-3">
             {acceptedFriends.map((friend) => (
-              <div key={friend.id} className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 hover:border-accent transition-colors">
-                <div className="flex items-center justify-between">
-                  <Link to={`/user/${friend.id}`} className="flex items-center gap-3 flex-1">
-                    <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center">
+              <div key={friend.id} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 sm:p-4 hover:border-accent transition-colors">
+                <div className="flex items-center gap-3">
+                  <Link to={`/user/${friend.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {friend.avatar_url ? (
-                        <img src={friend.avatar_url} alt={friend.name} className="w-full h-full rounded-full object-cover" />
+                        <img src={friend.avatar_url} alt={friend.name} className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-white font-bold">{friend.name.charAt(0).toUpperCase()}</span>
                       )}
                     </div>
-                    <div>
-                      <h5 className="text-white font-semibold">{friend.name}</h5>
-                      {friend.username && <p className="text-sm text-zinc-400">@{friend.username}</p>}
+                    <div className="min-w-0">
+                      <h5 className="text-white font-semibold truncate">{friend.name}</h5>
+                      {friend.username && <p className="text-sm text-zinc-400 truncate">@{friend.username}</p>}
                       {friend.location && (
-                        <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
-                          <Icon name="MapPin" className="h-3 w-3" />
-                          {friend.location}
+                        <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
+                          <Icon name="MapPin" className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{friend.location}</span>
                         </p>
                       )}
                     </div>
@@ -243,7 +235,7 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ userId, readonly = false
                     variant="ghost"
                     size="sm"
                     onClick={() => removeFriend(friend.id)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 flex-shrink-0 px-2"
                   >
                     <Icon name="UserMinus" className="h-4 w-4" />
                   </Button>

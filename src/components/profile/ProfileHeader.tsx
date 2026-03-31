@@ -31,30 +31,30 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 }) => {
   const hasCustomAvatar = user.avatar_url && user.avatar_url.startsWith('http');
   return (
-    <div className="bg-[#252836] rounded-lg p-4 relative">
-      <div className="absolute top-4 right-4 flex gap-2">
+    <div className="bg-[#252836] rounded-lg p-3 sm:p-4 relative">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-1 sm:gap-2">
         <button
           onClick={onEdit}
           className="p-2 hover:bg-[#1e2332] rounded-lg transition-colors"
           title="Редактировать"
         >
-          <Icon name="Edit" className="h-5 w-5 text-gray-400 hover:text-white" />
+          <Icon name="Edit" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white" />
         </button>
         <button
           onClick={onLogout}
           className="p-2 hover:bg-[#1e2332] rounded-lg transition-colors"
           title="Выйти"
         >
-          <Icon name="LogOut" className="h-5 w-5 text-gray-400 hover:text-white" />
+          <Icon name="LogOut" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white" />
         </button>
       </div>
 
-      <div className="flex items-start gap-4 mb-4">
+      <div className="flex items-start gap-3 sm:gap-4 mb-4">
         <div className="relative group flex-shrink-0">
           <img
             src={avatarPreview || user.avatar_url || getDefaultAvatar(editForm.gender)}
             alt={user.name}
-            className="w-24 h-24 rounded-full object-cover ring-4 ring-blue-500"
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-blue-500"
           />
           {isEditing && (
             <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
@@ -77,11 +77,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </button>
           )}
         </div>
-        <div className="flex-1 pr-16">
+        <div className="flex-1 pr-12 sm:pr-16 min-w-0">
           <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
             Участник с {profileData?.profile?.created_at ? new Date(profileData.profile.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}
           </p>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 truncate">
             {user.name}
             {profileData?.profile?.roles?.map((roleObj: any) => (
               <span key={roleObj.role} className="ml-2 text-xl">{getRoleEmoji(roleObj.role)}</span>
@@ -114,7 +114,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {user.phone && (
           <div className="bg-[#1e2332] rounded-lg p-3">
             <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">

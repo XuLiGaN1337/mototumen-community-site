@@ -329,11 +329,11 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-start sm:items-center justify-between gap-3">
         <div>
-          <h3 className="text-xl font-bold text-white">{readonly ? 'Гараж' : 'Мой гараж'}</h3>
-          <p className="text-zinc-400">Техника: {vehicles.length}</p>
+          <h3 className="text-lg sm:text-xl font-bold text-white">{readonly ? 'Гараж' : 'Мой гараж'}</h3>
+          <p className="text-zinc-400 text-sm">Техника: {vehicles.length}</p>
         </div>
         {!readonly && (
           <AddVehicleDialog
@@ -373,7 +373,7 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
           <p className="text-sm text-zinc-500 mt-2">Добавь свою первую технику</p>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {vehicles.map((vehicle) => (
             <VehicleCard
               key={vehicle.id}

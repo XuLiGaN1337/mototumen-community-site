@@ -227,162 +227,140 @@ export const UserProfilePage: React.FC = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-0">
           <TabsContent value="profile" className="mt-0">
             <div className="bg-[#252836] rounded-lg overflow-hidden">
-              <div className="p-3 sm:p-6">
-                <div className="flex flex-col items-center sm:items-start mb-6">
-                  <div className="relative mb-4">
-                    <img
-                      src={profile.avatar_url || getDefaultAvatar(profile.gender)}
-                      alt={profile.name}
-                      className="w-40 h-40 rounded-lg object-cover"
-                    />
-                  </div>
-
-                  <div className="w-full text-center sm:text-left">
+              <div className="p-4 sm:p-6">
+                {/* Шапка профиля — горизонтальная на мобилке */}
+                <div className="flex items-start gap-4 mb-5">
+                  <img
+                    src={profile.avatar_url || getDefaultAvatar(profile.gender)}
+                    alt={profile.name}
+                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
                       Участник с {new Date(profile.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mb-4">
-                      <h1 className="text-xl sm:text-2xl font-semibold text-white">
-                        {profile.name}{getRoleEmoji(profile.role || 'user')}
-                      </h1>
-                      {profile.callsign && (
+                    <h1 className="text-lg sm:text-2xl font-semibold text-white leading-tight truncate">
+                      {profile.name}{getRoleEmoji(profile.role || 'user')}
+                    </h1>
+                    {profile.callsign && (
+                      <div className="mt-1">
                         <CallsignPlate callsign={profile.callsign} region="72" size="sm" />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3 sm:gap-6 mb-4">
-                      <div className="flex items-center gap-2">
-                        <Icon name="MapPin" className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-300">{profile.location || 'Не указан'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Icon name="Phone" className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                        <span className="text-sm text-gray-300">{profile.phone || 'Не указан'}</span>
-                      </div>
-                      {telegramUsername && (
-                        <Button
-                          onClick={() => window.open(`https://t.me/${telegramUsername}`, '_blank')}
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-400 hover:text-white hover:bg-[#1e2332]"
-                        >
-                          <Icon name="MessageCircle" className="h-4 w-4 mr-2" />
-                          Написать
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Statistics - clickable */}
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      <button 
-                        onClick={() => setActiveTab('friends')}
-                        className="bg-[#1e2332] rounded-lg p-3 text-center hover:bg-[#2a2e3f] transition-colors cursor-pointer"
-                      >
-                        <Icon name="Users" className="h-5 w-5 mx-auto mb-1 text-[#ff6b35]" />
-                        <div className="text-xl font-bold text-white">{friendsCount}</div>
-                        <div className="text-xs text-gray-500">Друзей</div>
-                      </button>
-                      <button 
-                        onClick={() => setActiveTab('garage')}
-                        className="bg-[#1e2332] rounded-lg p-3 text-center hover:bg-[#2a2e3f] transition-colors cursor-pointer"
-                      >
-                        <Icon name="Car" className="h-5 w-5 mx-auto mb-1 text-[#ff6b35]" />
-                        <div className="text-xl font-bold text-white">{vehicles.length}</div>
-                        <div className="text-xs text-gray-500">Техника</div>
-                      </button>
-                      <div className="bg-[#1e2332] rounded-lg p-3 text-center">
-                        <Icon name="Heart" className="h-5 w-5 mx-auto mb-1 text-[#ff6b35]" />
-                        <div className="text-xl font-bold text-white">{favoritesCount}</div>
-                        <div className="text-xs text-gray-500">Избранное</div>
-                      </div>
-                    </div>
-
-                    {!isOwnProfile && token && (
-                      <div className="flex gap-2">
-                        {friendStatus === 'none' && (
-                          <Button onClick={addFriend} className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white flex-1" size="sm">
-                            <Icon name="UserPlus" className="h-4 w-4 mr-2" />
-                            Добавить в друзья
-                          </Button>
-                        )}
-                        {friendStatus === 'pending_sent' && (
-                          <Button disabled className="bg-gray-600 text-gray-300 flex-1 cursor-default" size="sm">
-                            <Icon name="Clock" className="h-4 w-4 mr-2" />
-                            Заявка отправлена
-                          </Button>
-                        )}
-                        {friendStatus === 'pending_received' && (
-                          <>
-                            <Button onClick={acceptFriend} className="bg-green-600 hover:bg-green-700 text-white flex-1" size="sm">
-                              <Icon name="Check" className="h-4 w-4 mr-2" />
-                              Принять заявку
-                            </Button>
-                            <Button onClick={removeFriend} variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10" size="sm">
-                              <Icon name="X" className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        {friendStatus === 'friends' && (
-                          <Button onClick={removeFriend} variant="outline" className="border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-400 flex-1" size="sm">
-                            <Icon name="UserCheck" className="h-4 w-4 mr-2" />
-                            В друзьях · Убрать
-                          </Button>
-                        )}
                       </div>
                     )}
-
-                    <div className="space-y-3 mt-4">
-                      <button
-                        onClick={() => setActiveTab("garage")}
-                        className="w-full bg-[#3d4253] hover:bg-[#4a5266] rounded-lg p-4 flex items-center justify-between transition-colors"
+                    {telegramUsername && (
+                      <Button
+                        onClick={() => window.open(`https://t.me/${telegramUsername}`, '_blank')}
+                        variant="ghost"
+                        size="sm"
+                        className="text-[#0088cc] hover:text-white hover:bg-[#1e2332] mt-1 px-2 h-7"
                       >
-                        <div className="flex items-center gap-3">
-                          <Icon name="Car" className="h-5 w-5 text-[#ff6b35]" />
-                          <span className="text-gray-300 text-sm">Гараж</span>
-                        </div>
-                        <span className="text-white font-bold text-2xl">{vehicles.length}</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("friends")}
-                        className="w-full bg-[#3d4253] hover:bg-[#4a5266] rounded-lg p-4 flex items-center justify-between transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon name="Users" className="h-5 w-5 text-[#ff6b35]" />
-                          <span className="text-gray-300 text-sm">Друзья</span>
-                        </div>
-                        <span className="text-white font-bold text-2xl">{friendsCount}</span>
-                      </button>
-                    </div>
+                        <Icon name="Send" className="h-3 w-3 mr-1" />
+                        Написать
+                      </Button>
+                    )}
                   </div>
                 </div>
+
+                {/* Инфо — локация и телефон */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-sm text-gray-400">
+                  {profile.location && (
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="MapPin" className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{profile.location}</span>
+                    </div>
+                  )}
+                  {profile.phone && (
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="Phone" className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{profile.phone}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Статистика */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <button
+                    onClick={() => setActiveTab('friends')}
+                    className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
+                  >
+                    <div className="text-lg sm:text-xl font-bold text-white">{friendsCount}</div>
+                    <div className="text-[11px] text-gray-500">Друзей</div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('garage')}
+                    className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
+                  >
+                    <div className="text-lg sm:text-xl font-bold text-white">{vehicles.length}</div>
+                    <div className="text-[11px] text-gray-500">Техника</div>
+                  </button>
+                  <div className="bg-[#1e2332] rounded-lg p-2.5 text-center">
+                    <div className="text-lg sm:text-xl font-bold text-white">{favoritesCount}</div>
+                    <div className="text-[11px] text-gray-500">Избранное</div>
+                  </div>
+                </div>
+
+                {/* Кнопка дружбы */}
+                {!isOwnProfile && token && (
+                  <div className="flex gap-2 mb-4">
+                    {friendStatus === 'none' && (
+                      <Button onClick={addFriend} className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white flex-1">
+                        <Icon name="UserPlus" className="h-4 w-4 mr-2" />
+                        Добавить в друзья
+                      </Button>
+                    )}
+                    {friendStatus === 'pending_sent' && (
+                      <Button disabled className="bg-gray-700 text-gray-400 flex-1 cursor-default">
+                        <Icon name="Clock" className="h-4 w-4 mr-2" />
+                        Заявка отправлена
+                      </Button>
+                    )}
+                    {friendStatus === 'pending_received' && (
+                      <>
+                        <Button onClick={acceptFriend} className="bg-green-600 hover:bg-green-700 text-white flex-1">
+                          <Icon name="Check" className="h-4 w-4 mr-2" />
+                          Принять заявку
+                        </Button>
+                        <Button onClick={removeFriend} variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10 px-3">
+                          <Icon name="X" className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    {friendStatus === 'friends' && (
+                      <Button onClick={removeFriend} variant="outline" className="border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-400 flex-1">
+                        <Icon name="UserCheck" className="h-4 w-4 mr-2" />
+                        В друзьях · Убрать
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <TabsList className="w-full justify-start bg-transparent border-t border-gray-700 rounded-none px-4 h-auto py-0">
-                <TabsTrigger 
-                  value="profile" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
+              <TabsList className="w-full justify-start bg-transparent border-t border-gray-700 rounded-none px-2 sm:px-4 h-auto py-0">
+                <TabsTrigger
+                  value="profile"
+                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm"
                 >
                   Обо мне
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="garage" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
+                <TabsTrigger
+                  value="garage"
+                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm"
                 >
                   Гараж ({vehicles.length})
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="friends" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
+                <TabsTrigger
+                  value="friends"
+                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm"
                 >
                   Друзья ({friendsCount})
                 </TabsTrigger>
               </TabsList>
 
-              <div className="p-3 sm:p-6">
+              <div className="p-4 sm:p-6">
                 {profile.bio ? (
-                  <p className="text-gray-300">{profile.bio}</p>
+                  <p className="text-gray-300 text-sm sm:text-base leading-relaxed">{profile.bio}</p>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">Пользователь пока не рассказал о себе</p>
+                  <p className="text-gray-500 text-center py-8 text-sm">Пользователь пока не рассказал о себе</p>
                 )}
               </div>
             </div>
@@ -423,28 +401,12 @@ export const UserProfilePage: React.FC = () => {
 
           <TabsContent value="friends" className="mt-0">
             <div className="bg-[#252836] rounded-lg overflow-hidden">
-              <TabsList className="w-full justify-start bg-transparent border-b border-gray-700 rounded-none px-4 h-auto py-0">
-                <TabsTrigger 
-                  value="profile" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
-                >
-                  Обо мне
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="garage" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
-                >
-                  Гараж ({vehicles.length})
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="friends" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
-                >
-                  Друзья ({friendsCount})
-                </TabsTrigger>
+              <TabsList className="w-full justify-start bg-transparent border-b border-gray-700 rounded-none px-2 sm:px-4 h-auto py-0">
+                <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm">Обо мне</TabsTrigger>
+                <TabsTrigger value="garage" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm">Гараж ({vehicles.length})</TabsTrigger>
+                <TabsTrigger value="friends" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm">Друзья ({friendsCount})</TabsTrigger>
               </TabsList>
-              
-              <div className="p-3 sm:p-6">
+              <div className="p-4 sm:p-6">
                 <FriendsTab userId={parseInt(userId!)} readonly={!isOwnProfile} />
               </div>
             </div>
