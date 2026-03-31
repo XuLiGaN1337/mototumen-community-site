@@ -138,6 +138,9 @@ def handler(event: dict, context: dict) -> dict:
     
     # Handle /start command
     if text.startswith("/start"):
+        parts = text.split(" ", 1)
+        start_param = parts[1].strip() if len(parts) > 1 else ""
+        
         user_data = {
             "id": from_user.get("id"),
             "first_name": from_user.get("first_name", ""),
@@ -145,26 +148,32 @@ def handler(event: dict, context: dict) -> dict:
             "username": from_user.get("username", "")
         }
         
-        # Generate JWT token
-        token = generate_auth_jwt(user_data)
-        auth_url = f"{SITE_URL}/auth-callback?token={token}"
-        
         first_name = from_user.get("first_name", "Пользователь")
         
-        welcome_text = (
-            f"Привет, <b>{first_name}</b>! 👋\n\n"
-            f"Нажми кнопку ниже, чтобы войти на сайт <b>МОТОТЮМЕНЬ</b>.\n\n"
-            f"Ссылка действительна 5 минут."
-        )
+        # link_SESSIONTOKEN — привязка Telegram к существующему аккаунту
+        if start_param.startswith("link_"):
+            session_token = start_param[5:]
+            token = generate_auth_jwt(user_data)
+            auth_url = f"{SITE_URL}/auth-callback?token={token}&link_token={session_token}"
+            welcome_text = (
+                f"Привет, <b>{first_name}</b>! 👋\n\n"
+                f"Нажми кнопку ниже, чтобы <b>привязать</b> Telegram к своему аккаунту на сайте <b>МОТОТЮМЕНЬ</b>.\n\n"
+                f"Ссылка действительна 5 минут."
+            )
+            button_text = "🔗 Привязать Telegram"
+        else:
+            token = generate_auth_jwt(user_data)
+            auth_url = f"{SITE_URL}/auth-callback?token={token}"
+            welcome_text = (
+                f"Привет, <b>{first_name}</b>! 👋\n\n"
+                f"Нажми кнопку ниже, чтобы войти на сайт <b>МОТОТЮМЕНЬ</b>.\n\n"
+                f"Ссылка действительна 5 минут."
+            )
+            button_text = "🏍 Войти на сайт"
         
         reply_markup = {
             "inline_keyboard": [
-                [
-                    {
-                        "text": "🏍 Войти на сайт",
-                        "url": auth_url
-                    }
-                ]
+                [{"text": button_text, "url": auth_url}]
             ]
         }
         

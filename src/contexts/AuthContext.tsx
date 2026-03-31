@@ -50,6 +50,7 @@ interface AuthContextType {
   loginWithTelegram: (telegramUser: TelegramUser) => Promise<void>;
   loginWithYandex: (code: string) => Promise<void>;
   linkYandex: (code: string) => Promise<void>;
+  linkTelegram: (telegramUser: TelegramUser) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
@@ -161,15 +162,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const linkYandex = async (code: string) => {
-    if (!token) throw new Error('Not authenticated');
+  const linkYandex = async (code: string, sessionToken?: string) => {
+    const t = sessionToken || token;
+    if (!t) throw new Error('Not authenticated');
     const response = await fetch(AUTH_API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': t },
       body: JSON.stringify({
         action: 'link_yandex',
         code,
         redirect_uri: YANDEX_REDIRECT_URI,
+      }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Link failed');
+    }
+  };
+
+  const linkTelegram = async (telegramUser: TelegramUser) => {
+    const t = token || localStorage.getItem('authToken');
+    if (!t) throw new Error('Not authenticated');
+    const response = await fetch(AUTH_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': t },
+      body: JSON.stringify({
+        action: 'link_telegram',
+        telegram_id: telegramUser.id,
+        username: telegramUser.username,
+        first_name: telegramUser.first_name,
+        last_name: telegramUser.last_name,
       }),
     });
     if (!response.ok) {
@@ -244,6 +266,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loginWithTelegram,
     loginWithYandex,
     linkYandex,
+    linkTelegram,
     logout,
     updateProfile,
   };

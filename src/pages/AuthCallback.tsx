@@ -3,22 +3,25 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/AuthContext";
 
+const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
+
 const AuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { loginWithTelegram } = useAuth();
+  const { loginWithTelegram, linkTelegram } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [needSubscription, setNeedSubscription] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<{ id: number; first_name: string; last_name?: string; username?: string; photo_url?: string } | null>(null);
 
   useEffect(() => {
     const handleAuth = async () => {
       try {
         const token = searchParams.get("token");
+        const linkToken = searchParams.get("link_token");
         
         if (token) {
-          const response = await fetch('https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e', {
+          const response = await fetch(AUTH_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'verify_jwt_token', token })
@@ -46,6 +49,33 @@ const AuthCallback: React.FC = () => {
           };
           
           setUserData(telegramUser);
+
+          // Если есть link_token — это привязка, а не вход
+          if (linkToken) {
+            const sessionToken = localStorage.getItem('authToken');
+            if (!sessionToken) {
+              throw new Error('Войдите в аккаунт перед привязкой Telegram');
+            }
+            const linkResp = await fetch(AUTH_API, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Auth-Token': sessionToken },
+              body: JSON.stringify({
+                action: 'link_telegram',
+                telegram_id: telegramUser.id,
+                username: telegramUser.username,
+                first_name: telegramUser.first_name,
+                last_name: telegramUser.last_name,
+              }),
+            });
+            if (!linkResp.ok) {
+              const e = await linkResp.json();
+              throw new Error(e.error || 'Ошибка привязки Telegram');
+            }
+            setIsLoading(false);
+            setTimeout(() => navigate('/profile?linked=telegram'), 1500);
+            return;
+          }
+
           await loginWithTelegram(telegramUser);
         } else {
           const telegramData = {

@@ -790,6 +790,48 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
 
+            elif action == 'link_telegram':
+                if not user:
+                    return {
+                        'statusCode': 401,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Auth required'}),
+                        'isBase64Encoded': False
+                    }
+                telegram_id = body.get('telegram_id')
+                tg_username = body.get('username')
+                tg_first_name = body.get('first_name')
+                tg_last_name = body.get('last_name')
+                if not telegram_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'telegram_id required'}),
+                        'isBase64Encoded': False
+                    }
+                cur.execute("SELECT id FROM users WHERE telegram_id = %s AND id != %s", (telegram_id, user['id']))
+                already_used = cur.fetchone()
+                if already_used:
+                    return {
+                        'statusCode': 409,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'Этот Telegram уже привязан к другому профилю'}),
+                        'isBase64Encoded': False
+                    }
+                cur.execute(
+                    "UPDATE users SET telegram_id = %s, username = %s, first_name = %s, last_name = %s WHERE id = %s",
+                    (telegram_id, tg_username, tg_first_name, tg_last_name, user['id'])
+                )
+                if tg_username:
+                    cur.execute("UPDATE user_profiles SET telegram = %s WHERE user_id = %s", (tg_username, user['id']))
+                conn.commit()
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'success': True, 'message': 'Telegram привязан'}),
+                    'isBase64Encoded': False
+                }
+
             elif action == 'logout':
                 logout_token = get_header(event.get('headers', {}), 'X-Auth-Token')
                 

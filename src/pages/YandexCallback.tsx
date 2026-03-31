@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const YandexCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { loginWithYandex, linkYandex, isAuthenticated } = useAuth();
+  const { loginWithYandex, linkYandex } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,8 +20,10 @@ const YandexCallback: React.FC = () => {
       }
 
       try {
-        if (state === "link" && isAuthenticated) {
-          await linkYandex(code);
+        // Берём токен напрямую из localStorage — не ждём isAuthenticated
+        const sessionToken = localStorage.getItem('authToken');
+        if (state === "link" && sessionToken) {
+          await linkYandex(code, sessionToken);
           navigate("/profile?linked=yandex");
         } else {
           await loginWithYandex(code);

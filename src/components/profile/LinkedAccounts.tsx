@@ -36,11 +36,25 @@ const LinkedAccounts: React.FC<LinkedAccountsProps> = ({ token }) => {
     if (params.get('linked') === 'yandex') {
       toast({ title: 'Яндекс привязан', description: 'Аккаунт успешно привязан к профилю' });
       window.history.replaceState({}, '', '/profile');
+      // Перезагружаем данные привязок
+      fetch(`${AUTH_API}?action=linked_accounts`, { headers: { 'X-Auth-Token': token } })
+        .then((r) => r.json()).then(setData);
+    }
+    if (params.get('linked') === 'telegram') {
+      toast({ title: 'Telegram привязан', description: 'Аккаунт успешно привязан к профилю' });
+      window.history.replaceState({}, '', '/profile');
+      fetch(`${AUTH_API}?action=linked_accounts`, { headers: { 'X-Auth-Token': token } })
+        .then((r) => r.json()).then(setData);
     }
   }, []);
 
   const handleLinkYandex = () => {
     window.location.href = getYandexAuthUrl('link');
+  };
+
+  const handleLinkTelegram = () => {
+    // Передаём session token в параметре бота — бот вернёт ссылку с link_token
+    window.open(`https://t.me/auth_mototyumen_bot?start=link_${token}`, '_blank');
   };
 
   if (loading) {
@@ -82,7 +96,7 @@ const LinkedAccounts: React.FC<LinkedAccountsProps> = ({ token }) => {
           </span>
         ) : (
           <button
-            onClick={() => window.open('https://t.me/auth_mototyumen_bot?start=auth', '_blank')}
+            onClick={handleLinkTelegram}
             className="text-xs bg-[#0088cc]/20 hover:bg-[#0088cc]/30 text-[#0088cc] px-3 py-1.5 rounded-lg transition-all"
           >
             Привязать
