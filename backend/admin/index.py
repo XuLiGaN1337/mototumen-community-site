@@ -140,8 +140,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Установка СВОЕГО пароля (первый вход)
         if method == 'POST' and action == 'set-my-admin-password':
-            body = json.loads(event.get('body', '{}'))
+            raw_body = event.get('body') or '{}'
+            if not raw_body.strip():
+                raw_body = '{}'
+            body = json.loads(raw_body)
             password = body.get('password', '')
+            print(f"[SET PASSWORD] user_id={user['id']}, password_len={len(password)}, has_existing={bool(user.get('admin_password_hash'))}")
             
             if not password or len(password) < 6:
                 return {
@@ -175,8 +179,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Проверка СВОЕГО пароля (вход в админку)
         if method == 'POST' and action == 'verify-my-admin-password':
-            body = json.loads(event.get('body', '{}'))
+            raw_body = event.get('body') or '{}'
+            if not raw_body.strip():
+                raw_body = '{}'
+            body = json.loads(raw_body)
             password = body.get('password', '')
+            print(f"[VERIFY PASSWORD] user_id={user['id']}, password_len={len(password)}")
             
             stored_hash = user.get('admin_password_hash')
             if not stored_hash:
