@@ -47,6 +47,7 @@ export const UserProfilePage: React.FC = () => {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
+  const [friendStatus, setFriendStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'friends'>('none');
   const { token, user: currentUser } = useAuth();
   const { toast } = useToast();
 
@@ -55,6 +56,12 @@ export const UserProfilePage: React.FC = () => {
       loadProfile();
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (userId && token && currentUser) {
+      loadFriendStatus();
+    }
+  }, [userId, token, currentUser]);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -85,37 +92,84 @@ export const UserProfilePage: React.FC = () => {
     }
   };
 
+  const loadFriendStatus = async () => {
+    if (!token || !userId || !currentUser) return;
+    try {
+      const response = await fetch(`${AUTH_API}?action=friends`, {
+        headers: { 'X-Auth-Token': token },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      const targetId = parseInt(userId);
+      const found = (data.friends || []).find((f: { id: number; status: string; direction: string }) => f.id === targetId);
+      if (!found) {
+        setFriendStatus('none');
+      } else if (found.status === 'accepted') {
+        setFriendStatus('friends');
+      } else if (found.status === 'pending' && found.direction === 'sent') {
+        setFriendStatus('pending_sent');
+      } else if (found.status === 'pending' && found.direction === 'received') {
+        setFriendStatus('pending_received');
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const addFriend = async () => {
     if (!token) {
-      toast({
-        title: "Требуется авторизация",
-        variant: "destructive",
-      });
+      toast({ title: "Требуется авторизация", variant: "destructive" });
       return;
     }
-
     try {
       const response = await fetch(`${AUTH_API}?action=friends`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Auth-Token': token,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
         body: JSON.stringify({ friend_id: parseInt(userId!) }),
       });
-
       const data = await response.json();
-      
       if (response.ok) {
-        if (data.message && data.message.includes('ожидаем')) {
-          toast({ title: "Заявка уже отправлена", description: "Ожидаем принятие заявки" });
-        } else {
-          toast({ title: "Заявка отправлена!" });
-        }
+        toast({ title: "Заявка отправлена!" });
+        setFriendStatus('pending_sent');
       } else {
         toast({ title: "Ошибка", description: data.error, variant: "destructive" });
       }
-    } catch (error) {
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    }
+  };
+
+  const removeFriend = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${AUTH_API}?action=friends&friend_id=${userId}`, {
+        method: 'DELETE',
+        headers: { 'X-Auth-Token': token },
+      });
+      if (response.ok) {
+        toast({ title: "Удалён из друзей" });
+        setFriendStatus('none');
+        setFriendsCount(prev => Math.max(0, prev - 1));
+      }
+    } catch {
+      toast({ title: "Ошибка", variant: "destructive" });
+    }
+  };
+
+  const acceptFriend = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${AUTH_API}?action=friends`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+        body: JSON.stringify({ friend_id: parseInt(userId!), status: 'accepted' }),
+      });
+      if (response.ok) {
+        toast({ title: "Заявка принята!" });
+        setFriendStatus('friends');
+        setFriendsCount(prev => prev + 1);
+      }
+    } catch {
       toast({ title: "Ошибка", variant: "destructive" });
     }
   };
@@ -157,8 +211,10 @@ export const UserProfilePage: React.FC = () => {
             onClick={() => {
               if (activeTab !== "profile") {
                 setActiveTab("profile");
+              } else if (window.history.length > 1) {
+                navigate(-1);
               } else {
-                window.history.length > 1 ? navigate(-1) : navigate('/');
+                navigate('/');
               }
             }}
             className="text-gray-400 hover:text-white"
@@ -242,14 +298,37 @@ export const UserProfilePage: React.FC = () => {
                     </div>
 
                     {!isOwnProfile && token && (
-                      <Button
-                        onClick={addFriend}
-                        className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white w-full"
-                        size="sm"
-                      >
-                        <Icon name="UserPlus" className="h-4 w-4 mr-2" />
-                        Добавить в друзья
-                      </Button>
+                      <div className="flex gap-2">
+                        {friendStatus === 'none' && (
+                          <Button onClick={addFriend} className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white flex-1" size="sm">
+                            <Icon name="UserPlus" className="h-4 w-4 mr-2" />
+                            Добавить в друзья
+                          </Button>
+                        )}
+                        {friendStatus === 'pending_sent' && (
+                          <Button disabled className="bg-gray-600 text-gray-300 flex-1 cursor-default" size="sm">
+                            <Icon name="Clock" className="h-4 w-4 mr-2" />
+                            Заявка отправлена
+                          </Button>
+                        )}
+                        {friendStatus === 'pending_received' && (
+                          <>
+                            <Button onClick={acceptFriend} className="bg-green-600 hover:bg-green-700 text-white flex-1" size="sm">
+                              <Icon name="Check" className="h-4 w-4 mr-2" />
+                              Принять заявку
+                            </Button>
+                            <Button onClick={removeFriend} variant="outline" className="border-red-500 text-red-400 hover:bg-red-500/10" size="sm">
+                              <Icon name="X" className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        {friendStatus === 'friends' && (
+                          <Button onClick={removeFriend} variant="outline" className="border-gray-600 text-gray-400 hover:border-red-500 hover:text-red-400 flex-1" size="sm">
+                            <Icon name="UserCheck" className="h-4 w-4 mr-2" />
+                            В друзьях · Убрать
+                          </Button>
+                        )}
+                      </div>
                     )}
 
                     <div className="space-y-3 mt-4">
