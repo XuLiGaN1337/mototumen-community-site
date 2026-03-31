@@ -1,5 +1,5 @@
 """
-Business: Admin panel - manage users, roles, and individual admin passwords
+Business: Admin panel — manage users, roles, and individual admin passwords
 Args: event with httpMethod, body, headers with X-Auth-Token; context with request_id
 Returns: HTTP response with users list, role management, and individual password management
 """
