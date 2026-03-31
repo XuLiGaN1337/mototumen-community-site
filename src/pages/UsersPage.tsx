@@ -99,29 +99,29 @@ export const UsersPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 mb-3">
             <Link to="/profile">
-              <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-                <Icon name="ArrowLeft" className="h-4 w-4 mr-2" />
+              <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white px-2">
+                <Icon name="ArrowLeft" className="h-4 w-4 mr-1" />
                 Назад
               </Button>
             </Link>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Сообщество</h1>
-          <p className="text-zinc-400">Найди единомышленников и добавь в друзья</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Сообщество</h1>
+          <p className="text-zinc-400 text-sm sm:text-base">Найди единомышленников и добавь в друзья</p>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-5">
           <div className="relative">
-            <Icon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-zinc-400" />
+            <Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-zinc-400" />
             <Input
               type="text"
-              placeholder="Поиск по имени или username..."
+              placeholder="Поиск по имени..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 bg-zinc-800 border-zinc-700 text-white h-12 text-lg"
+              className="pl-9 sm:pl-10 bg-zinc-800 border-zinc-700 text-white h-11 sm:h-12"
             />
           </div>
         </div>
@@ -132,47 +132,51 @@ export const UsersPage: React.FC = () => {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-12">
-            <Icon name="Users" className="h-16 w-16 mx-auto text-zinc-600 mb-4" />
+            <Icon name="Users" className="h-12 w-12 mx-auto text-zinc-600 mb-3" />
             <p className="text-zinc-400">Пользователи не найдены</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="bg-zinc-800 border border-zinc-700 rounded-lg p-5 hover:border-accent transition-all"
+                className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 sm:p-5 hover:border-accent transition-all"
               >
+                {/* Горизонтальный layout на мобилке, вертикальный на десктопе */}
                 <Link to={`/user/${user.id}`}>
-                  <div className="flex flex-col items-center text-center mb-4">
-                    <div className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mb-3">
+                  <div className="flex sm:flex-col items-center sm:items-center gap-3 sm:gap-0 mb-3 sm:mb-4 text-left sm:text-center">
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 bg-accent rounded-full flex-shrink-0 flex items-center justify-center sm:mb-3 overflow-hidden">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.name} className="w-full h-full rounded-full object-cover" />
+                        <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-white font-bold text-2xl">{user.name.charAt(0).toUpperCase()}</span>
+                        <span className="text-white font-bold text-xl sm:text-2xl">{user.name.charAt(0).toUpperCase()}</span>
                       )}
                     </div>
-                    <h3 className="text-white font-semibold text-lg">{user.name}</h3>
-                    {user.username && (
-                      <p className="text-sm text-zinc-400">@{user.username}</p>
-                    )}
-                    {user.location && (
-                      <p className="text-xs text-zinc-500 flex items-center gap-1 mt-2">
-                        <Icon name="MapPin" className="h-3 w-3" />
-                        {user.location}
-                      </p>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-white font-semibold text-base sm:text-lg truncate">{user.name}</h3>
+                      {user.username && (
+                        <p className="text-sm text-zinc-400 truncate">@{user.username}</p>
+                      )}
+                      {user.location && (
+                        <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+                          <Icon name="MapPin" className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{user.location}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </Link>
                 <div className="flex gap-2">
                   <Link to={`/user/${user.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full border-zinc-700">
+                    <Button variant="outline" size="sm" className="w-full border-zinc-700 h-9">
                       Профиль
                     </Button>
                   </Link>
                   {token && (
                     <Button
+                      size="sm"
                       onClick={() => addFriend(user.id)}
-                      className="bg-accent hover:bg-accent/90"
+                      className="bg-accent hover:bg-accent/90 h-9 px-3"
                     >
                       <Icon name="UserPlus" className="h-4 w-4" />
                     </Button>

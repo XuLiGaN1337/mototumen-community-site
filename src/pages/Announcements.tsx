@@ -105,42 +105,47 @@ const Announcements: React.FC = () => {
   return (
     <PageLayout>
       {/* Hero Section */}
-      <section className="bg-dark-900 text-white py-16 md:py-24">
+      <section className="bg-dark-900 text-white py-8 sm:py-14 md:py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight font-['Oswald']">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-3 sm:mb-6 tracking-tight font-['Oswald']">
             ОБЪЯВЛЕНИЯ
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-300 max-w-2xl mx-auto">
             Доска объявлений мотосообщества Тюмени
           </p>
         </div>
       </section>
 
       {/* Filters Section */}
-      <section className="py-8 px-4 bg-zinc-900/50 border-b border-zinc-800">
+      <section className="py-4 sm:py-6 px-4 bg-zinc-900/50 border-b border-zinc-800 sticky top-14 sm:top-16 z-30">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex flex-col gap-3">
             {/* Search */}
-            <div className="flex gap-2 w-full md:w-auto">
+            <div className="flex gap-2">
               <Input
                 placeholder="Поиск объявлений..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                className="bg-zinc-800 border-zinc-700 text-white w-full md:w-80"
+                className="bg-zinc-800 border-zinc-700 text-white flex-1"
               />
-              <Button onClick={handleSearch} className="bg-accent hover:bg-accent/90">
+              <Button onClick={handleSearch} className="bg-accent hover:bg-accent/90 px-3">
                 <Icon name="Search" className="h-4 w-4" />
               </Button>
+              {(searchTerm || selectedCategory !== "Все") && (
+                <Button variant="ghost" onClick={clearFilters} className="text-zinc-400 hover:text-white px-3">
+                  <Icon name="X" className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
-            {/* Category Filter */}
-            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+            {/* Category Filter — горизонтальный скролл */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
               {categories.map((category) => (
                 <Badge
                   key={category}
                   variant={selectedCategory === category ? "default" : "outline"}
-                  className={`cursor-pointer whitespace-nowrap ${
+                  className={`cursor-pointer whitespace-nowrap flex-shrink-0 text-xs sm:text-sm py-1 px-2 sm:px-3 ${
                     selectedCategory === category
                       ? "bg-accent hover:bg-accent/90"
                       : "hover:bg-zinc-800"
@@ -151,35 +156,18 @@ const Announcements: React.FC = () => {
                 </Badge>
               ))}
             </div>
-
-            {/* Clear Filters */}
-            {(searchTerm || selectedCategory !== "Все") && (
-              <Button
-                variant="ghost"
-                onClick={clearFilters}
-                className="text-zinc-400 hover:text-white"
-              >
-                <Icon name="X" className="h-4 w-4 mr-2" />
-                Сбросить
-              </Button>
-            )}
           </div>
 
-          {/* Results Count */}
-          <div className="mt-4 text-sm text-zinc-400">
-            {loading ? (
-              "Загрузка..."
-            ) : (
-              <>
-                Найдено объявлений: <span className="text-white font-medium">{announcements.length}</span>
-              </>
+          <div className="mt-2 text-xs sm:text-sm text-zinc-400">
+            {loading ? "Загрузка..." : (
+              <>Найдено: <span className="text-white font-medium">{announcements.length}</span></>
             )}
           </div>
         </div>
       </section>
 
       {/* Announcements Grid */}
-      <section className="py-16 px-4 min-h-screen">
+      <section className="py-6 sm:py-10 px-4 min-h-screen">
         <div className="container mx-auto">
           {loading ? (
             <div className="text-center py-12">
@@ -187,13 +175,13 @@ const Announcements: React.FC = () => {
             </div>
           ) : announcements.length === 0 ? (
             <div className="text-center py-12">
-              <Icon name="Inbox" className="h-16 w-16 text-zinc-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <Icon name="Inbox" className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
                 Объявлений не найдено
               </h3>
-              <p className="text-zinc-400 mb-4">
+              <p className="text-zinc-400 mb-4 text-sm sm:text-base">
                 {searchTerm || selectedCategory !== "Все"
-                  ? "Попробуйте изменить фильтры поиска"
+                  ? "Попробуйте изменить фильтры"
                   : "Пока нет объявлений в этой категории"}
               </p>
               {(searchTerm || selectedCategory !== "Все") && (
@@ -203,33 +191,31 @@ const Announcements: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {announcements.map((announcement) => {
                 const isExpanded = expandedCards.has(announcement.id!);
                 return (
                   <Card
                     key={announcement.id}
-                    className="bg-zinc-800 border-zinc-700 hover:border-accent transition-all hover-scale flex flex-col"
+                    className="bg-zinc-800 border-zinc-700 hover:border-accent transition-all flex flex-col"
                   >
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-2 p-4">
                       <div className="flex items-start justify-between mb-2">
-                        <Badge className="bg-purple-500 text-white">
+                        <Badge className="bg-purple-500 text-white text-xs">
                           {announcement.category}
                         </Badge>
-                        <span className="text-xs text-zinc-400">
+                        <span className="text-xs text-zinc-400 flex-shrink-0 ml-2">
                           {announcement.created_at
                             ? new Date(announcement.created_at).toLocaleDateString("ru-RU")
                             : ""}
                         </span>
                       </div>
-                      <CardTitle
-                        className="text-white text-lg leading-tight font-['Oswald']"
-                      >
+                      <CardTitle className="text-white text-base sm:text-lg leading-tight font-['Oswald']">
                         {announcement.title}
                       </CardTitle>
                     </CardHeader>
 
-                    <CardContent className="space-y-4 flex-1 flex flex-col">
+                    <CardContent className="space-y-3 flex-1 flex flex-col p-4 pt-0">
                       {announcement.image && (
                         <img
                           src={announcement.image}
