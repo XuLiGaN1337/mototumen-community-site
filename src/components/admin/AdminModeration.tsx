@@ -191,11 +191,32 @@ export const AdminModeration: React.FC<AdminModerationProps> = ({
     return requests.filter(r => r.status === 'pending' && r.organization_type === type).length;
   };
 
+  const [showArchive, setShowArchive] = useState(false);
+
   const getFilteredRequests = () => {
-    if (selectedFilter === 'all') {
-      return requests;
+    const pool = showArchive
+      ? requests.filter(r => r.status === 'archived')
+      : requests.filter(r => r.status !== 'archived');
+    if (selectedFilter === 'all') return pool;
+    return pool.filter(r => r.organization_type === selectedFilter);
+  };
+
+  const handleUnarchiveRequest = async (requestId: number) => {
+    setArchiveLoading(requestId);
+    try {
+      const response = await fetch(`${ADMIN_API}?action=organization-request`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token || '' },
+        body: JSON.stringify({ request_id: requestId, status: 'pending' }),
+      });
+      if (response.ok) {
+        await loadRequests();
+      }
+    } catch (error) {
+      console.error('Failed to unarchive:', error);
+    } finally {
+      setArchiveLoading(null);
     }
-    return requests.filter(r => r.organization_type === selectedFilter);
   };
 
   if (!isCEO) {
@@ -220,23 +241,63 @@ export const AdminModeration: React.FC<AdminModerationProps> = ({
     );
   }
 
+  const archivedCount = requests.filter(r => r.status === 'archived').length;
   const filteredRequests = getFilteredRequests();
 
   return (
     <div className="space-y-4">
-      <ModerationFilters
-        selectedFilter={selectedFilter}
-        onFilterChange={setSelectedFilter}
-        getPendingCount={getPendingCount}
-      />
+      {/* Шапка с фильтрами и кнопкой Архива */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1">
+          <ModerationFilters
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+            getPendingCount={getPendingCount}
+          />
+        </div>
+        <button
+          onClick={() => setShowArchive(!showArchive)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all flex-shrink-0 ${
+            showArchive
+              ? 'bg-zinc-700 border-zinc-500 text-white'
+              : 'border-zinc-700 text-gray-400 hover:text-white hover:border-zinc-500'
+          }`}
+        >
+          <Icon name="Archive" className="h-4 w-4" />
+          Архив {archivedCount > 0 && <span className="bg-zinc-600 text-xs px-1.5 py-0.5 rounded-full">{archivedCount}</span>}
+        </button>
+      </div>
 
       {filteredRequests.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Icon name="Inbox" className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">Нет заявок для отображения</p>
+            <Icon name={showArchive ? 'Archive' : 'Inbox'} className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-400">{showArchive ? 'Архив пуст' : 'Нет заявок для отображения'}</p>
           </CardContent>
         </Card>
+      ) : showArchive ? (
+        /* Архивные заявки — упрощённый список с кнопкой восстановления */
+        <div className="space-y-2">
+          {filteredRequests.map((req) => (
+            <Card key={req.id}>
+              <CardContent className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{req.organization_name}</p>
+                  <p className="text-xs text-muted-foreground">{req.user_name} · {req.organization_type} · {new Date((req.created_at.endsWith('Z') ? req.created_at : req.created_at + 'Z')).toLocaleDateString('ru-RU')}</p>
+                  {req.review_comment && <p className="text-xs text-muted-foreground mt-1 italic">«{req.review_comment}»</p>}
+                </div>
+                <button
+                  onClick={() => handleUnarchiveRequest(req.id)}
+                  disabled={archiveLoading === req.id}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-600 text-xs text-gray-300 hover:text-white hover:border-zinc-400 transition-all flex-shrink-0 disabled:opacity-50"
+                >
+                  {archiveLoading === req.id ? <Icon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <Icon name="RotateCcw" className="h-3.5 w-3.5" />}
+                  Восстановить
+                </button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
         <>
           <div className="hidden md:block">

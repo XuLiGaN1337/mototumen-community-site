@@ -46,7 +46,8 @@ const ACTION_ICON: Record<string, string> = {
 };
 
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const normalized = dateStr.endsWith('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z';
+  const diff = Date.now() - new Date(normalized).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1) return 'только что';
   if (m < 60) return `${m} мин назад`;
