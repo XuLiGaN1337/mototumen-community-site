@@ -1121,12 +1121,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 )
                 new_org = cur.fetchone()
                 print(f"[APPROVE ORG] Created organization id={new_org['id'] if new_org else None} for user={req['user_id']}")
-                # Выдаём роль organization пользователю (не перезаписываем ceo/admin/moderator)
+                # Ставим флаг организации (доп. к основной роли, не заменяет её)
                 cur.execute(
-                    f"UPDATE {SCHEMA}.users SET role = 'organization' WHERE id = %s AND role = 'user'",
+                    f"UPDATE {SCHEMA}.users SET is_organization = true WHERE id = %s",
                     (req['user_id'],)
                 )
-                print(f"[APPROVE ORG] Assigned role=organization to user={req['user_id']}")
+                print(f"[APPROVE ORG] Set is_organization=true for user={req['user_id']}")
 
             conn.commit()
 

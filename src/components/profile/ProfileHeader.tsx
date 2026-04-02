@@ -91,6 +91,9 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             {user.role && getRoleEmoji(user.role) && (
               <span className="ml-2 text-xl">{getRoleEmoji(user.role)}</span>
             )}
+            {profileData?.profile?.is_organization && (
+              <span className="ml-2 text-xl">🏢</span>
+            )}
           </h1>
           {organization && (
             <div className="mb-2">

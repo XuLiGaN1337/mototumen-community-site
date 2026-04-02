@@ -1257,7 +1257,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Auth required'}), 'isBase64Encoded': False}
             
             if method == 'GET':
-                cur.execute(f"SELECT u.id, u.email, u.name, u.role, u.created_at, u.telegram_id, u.username as telegram_username, p.phone, p.avatar_url, p.bio, p.location, p.gender, p.callsign, p.telegram FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE u.id = {user['id']}")
+                cur.execute(f"SELECT u.id, u.email, u.name, u.role, u.is_organization, u.created_at, u.telegram_id, u.username as telegram_username, p.phone, p.avatar_url, p.bio, p.location, p.gender, p.callsign, p.telegram FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE u.id = {user['id']}")
                 profile = cur.fetchone()
 
                 cur.execute(f"SELECT id, name, category, type FROM t_p21120869_mototumen_community_.organizations WHERE user_id = {user['id']} AND is_active = true LIMIT 1")
