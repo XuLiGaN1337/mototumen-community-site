@@ -1040,9 +1040,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     org_req.id,
                     org_req.user_id,
                     org_req.organization_name,
+                    org_req.organization_type,
                     org_req.description,
-                    org_req.contact_info,
+                    org_req.address,
+                    org_req.phone,
+                    org_req.email,
+                    org_req.website,
+                    org_req.working_hours,
+                    org_req.additional_info,
                     org_req.status,
+                    org_req.review_comment,
                     org_req.created_at,
                     org_req.updated_at,
                     u.name as user_name,
@@ -1072,23 +1079,24 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             body = json.loads(event.get('body', '{}'))
-            request_id = body.get('requestId')
+            request_id = body.get('request_id') or body.get('requestId')
             status = body.get('status')
-            
-            if not request_id or status not in ['approved', 'rejected']:
+            review_comment = body.get('review_comment', '')
+
+            if not request_id or status not in ['approved', 'rejected', 'archived']:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'requestId и status (approved/rejected) обязательны'}),
+                    'body': json.dumps({'error': 'request_id и status обязательны'}),
                     'isBase64Encoded': False
                 }
-            
+
             cur.execute(
                 f"SELECT * FROM {SCHEMA}.organization_requests WHERE id = %s",
                 (request_id,)
             )
             req = cur.fetchone()
-            
+
             if not req:
                 return {
                     'statusCode': 404,
@@ -1096,24 +1104,28 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'body': json.dumps({'error': 'Заявка не найдена'}),
                     'isBase64Encoded': False
                 }
-            
+
             cur.execute(
-                f"UPDATE {SCHEMA}.organization_requests SET status = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-                (status, request_id)
+                f"UPDATE {SCHEMA}.organization_requests SET status = %s, review_comment = %s, reviewed_by = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                (status, review_comment, user['id'], request_id)
             )
-            
+
             if status == 'approved':
+                # При одобрении создаём организацию из данных заявки
                 cur.execute(
                     f"""
-                    INSERT INTO {SCHEMA}.organizations 
-                    (user_id, name, description, contact_info)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO {SCHEMA}.organizations
+                    (user_id, name, type, description, address, phone, email, website, working_hours)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING
                     """,
-                    (req['user_id'], req['organization_name'], req['description'], req['contact_info'])
+                    (req['user_id'], req['organization_name'], req.get('organization_type', ''),
+                     req.get('description', ''), req.get('address', ''), req.get('phone', ''),
+                     req.get('email', ''), req.get('website', ''), req.get('working_hours', ''))
                 )
-            
+
             conn.commit()
-            
+
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
