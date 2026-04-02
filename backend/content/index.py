@@ -95,8 +95,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             if content_type == 'shops':
                 query = """
-                    SELECT id, name, description, category, image, rating, 
-                           location as address, phone, phones, website, organization_id, 
+                    SELECT id, name, description, category, image, rating,
+                           address, phone, website, organization_id,
                            is_open, working_hours, latitude, longitude, email, created_at
                     FROM shops WHERE 1=1
                 """

@@ -1133,6 +1133,108 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
+        # Создание/обновление карточки организации
+        if method in ('POST', 'PUT') and action == 'shop':
+            body = json.loads(event.get('body') or '{}')
+            shop_id    = body.get('id')
+            org_id     = body.get('organization_id')
+            name       = body.get('name', '')
+            description = body.get('description', '')
+            category   = body.get('category', '')
+            address    = body.get('address', '')
+            phone      = body.get('phone', '')
+            email      = body.get('email', '')
+            website    = body.get('website', '')
+            working_hours = body.get('working_hours', '')
+            image_url  = body.get('image_url', '')
+            is_open    = body.get('is_open', True)
+
+            if not org_id or not name:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'organization_id и name обязательны'}),
+                    'isBase64Encoded': False
+                }
+
+            # Проверяем что организация принадлежит пользователю
+            cur.execute(
+                f"SELECT id FROM {SCHEMA}.organization_requests WHERE id = %s AND user_id = %s AND status = 'approved'",
+                (org_id, user['id'])
+            )
+            if not cur.fetchone():
+                return {
+                    'statusCode': 403,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Организация не найдена или нет прав'}),
+                    'isBase64Encoded': False
+                }
+
+            if method == 'PUT' and shop_id:
+                cur.execute(
+                    f"""UPDATE {SCHEMA}.shops
+                        SET name=%s, description=%s, category=%s, address=%s, phone=%s,
+                            email=%s, website=%s, working_hours=%s, image=%s, is_open=%s,
+                            updated_at=CURRENT_TIMESTAMP
+                        WHERE id=%s AND organization_id=%s""",
+                    (name, description, category, address, phone, email, website,
+                     working_hours, image_url, is_open, shop_id, org_id)
+                )
+            else:
+                cur.execute(
+                    f"""INSERT INTO {SCHEMA}.shops
+                        (organization_id, name, description, category, address, phone,
+                         email, website, working_hours, image, is_open)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        RETURNING id""",
+                    (org_id, name, description, category, address, phone,
+                     email, website, working_hours, image_url, is_open)
+                )
+                new_row = cur.fetchone()
+                shop_id = new_row['id'] if new_row else None
+
+            conn.commit()
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'success': True, 'id': shop_id}),
+                'isBase64Encoded': False
+            }
+
+        # Удаление карточки организации
+        if method == 'DELETE' and action == 'shop':
+            body = json.loads(event.get('body') or '{}')
+            shop_id = body.get('shop_id')
+            if not shop_id:
+                return {
+                    'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'shop_id обязателен'}),
+                    'isBase64Encoded': False
+                }
+            # Проверяем что карточка принадлежит пользователю
+            cur.execute(
+                f"""SELECT s.id FROM {SCHEMA}.shops s
+                    JOIN {SCHEMA}.organization_requests orq ON s.organization_id = orq.id
+                    WHERE s.id = %s AND orq.user_id = %s""",
+                (shop_id, user['id'])
+            )
+            if not cur.fetchone() and user['role'] not in ('ceo', 'admin'):
+                return {
+                    'statusCode': 403,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Нет прав на удаление'}),
+                    'isBase64Encoded': False
+                }
+            cur.execute(f"DELETE FROM {SCHEMA}.shops WHERE id = %s", (shop_id,))
+            conn.commit()
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'success': True}),
+                'isBase64Encoded': False
+            }
+
         # Список магазинов
         if method == 'GET' and action == 'shops':
             cur.execute(f"""
