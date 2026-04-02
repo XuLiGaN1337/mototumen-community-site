@@ -21,8 +21,15 @@ const Help = () => {
     motoPlate: "",
     problemDescription: "",
     location: "",
-    phone: user?.phone || "",
+    phone: "",
   });
+
+  // Подставляем телефон из профиля как только он загрузится
+  useEffect(() => {
+    if (user?.phone) {
+      setFormData(prev => ({ ...prev, phone: prev.phone || user.phone || "" }));
+    }
+  }, [user?.phone]);
 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
@@ -150,9 +157,26 @@ const Help = () => {
               <Icon name="User" className="w-6 h-6 text-orange" />
               <h2 className="text-xl font-bold">Ваши данные</h2>
             </div>
-            <div className="space-y-2">
-              <p className="text-foreground"><span className="text-muted-foreground">Имя:</span> {user?.name}</p>
-              <p className="text-foreground"><span className="text-muted-foreground">Телефон:</span> {user?.phone || "Не указан"}</p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm w-16">Имя:</span>
+                <span className="font-medium">{user?.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="phone" className="text-muted-foreground text-sm w-16 flex-shrink-0">Телефон:</Label>
+                <Input
+                  id="phone"
+                  placeholder="+7 (999) 123-45-67"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="flex-1"
+                />
+              </div>
+              {!user?.phone && (
+                <p className="text-xs text-muted-foreground">
+                  💡 Добавьте телефон в <a href="/profile" className="underline">профиле</a> чтобы он подставлялся автоматически
+                </p>
+              )}
             </div>
           </div>
 
