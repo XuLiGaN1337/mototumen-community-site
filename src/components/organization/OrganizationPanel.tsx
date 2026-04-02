@@ -54,6 +54,15 @@ const SHOP_CATEGORIES = [
   'Другое'
 ];
 
+function getCardLabel(orgType?: string): string {
+  const t = (orgType || '').toLowerCase();
+  if (t.includes('сервис') || t.includes('service')) return 'сервиса';
+  if (t.includes('школ') || t.includes('school')) return 'мотошколы';
+  if (t.includes('клуб') || t.includes('club')) return 'клуба';
+  if (t.includes('прокат') || t.includes('rent')) return 'проката';
+  return 'магазина';
+}
+
 export const OrganizationPanel: React.FC = () => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
@@ -207,7 +216,7 @@ export const OrganizationPanel: React.FC = () => {
   };
 
   const handleDeleteShop = async (shopId: number) => {
-    if (!token || !confirm('Удалить карточку магазина?')) return;
+    if (!token || !confirm(`Удалить карточку ${getCardLabel(selectedOrg?.organization_type)}?`)) return;
 
     try {
       const response = await fetch(`${ORG_API}?action=shop`, {
@@ -529,7 +538,9 @@ export const OrganizationPanel: React.FC = () => {
         <Card>
           <CardHeader className="p-4 md:p-6">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <CardTitle className="text-lg md:text-xl">Карточки магазинов</CardTitle>
+              <CardTitle className="text-lg md:text-xl">
+                Карточки {getCardLabel(selectedOrg?.organization_type) === 'магазина' ? 'магазинов' : getCardLabel(selectedOrg?.organization_type)}
+              </CardTitle>
               <Button onClick={startNewShop} size="sm" className="text-xs md:text-sm">
                 <Icon name="Plus" className="mr-1 md:mr-2" size={14} />
                 Добавить карточку
@@ -539,7 +550,7 @@ export const OrganizationPanel: React.FC = () => {
           <CardContent className="p-4 md:p-6">
             {shops.length === 0 ? (
               <p className="text-center text-muted-foreground py-6 md:py-8 text-sm">
-                Нет добавленных карточек магазинов
+                Нет добавленных карточек {getCardLabel(selectedOrg?.organization_type) === 'магазина' ? 'магазинов' : getCardLabel(selectedOrg?.organization_type)}
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
