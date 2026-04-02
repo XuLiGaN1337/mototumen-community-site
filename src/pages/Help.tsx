@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Help = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -27,6 +27,7 @@ const Help = () => {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated) {
       toast({
         title: "Требуется авторизация",
@@ -35,7 +36,7 @@ const Help = () => {
       });
       navigate("/");
     }
-  }, [isAuthenticated, navigate, toast]);
+  }, [isAuthenticated, isLoading, navigate, toast]);
 
   const getCurrentLocation = () => {
     setIsLoadingLocation(true);
@@ -98,6 +99,14 @@ const Help = () => {
       phone: user?.phone || "",
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Icon name="Loader2" className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return null;
