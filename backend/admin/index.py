@@ -1006,25 +1006,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            contact_info = {
-                'address': address,
-                'phone': phone,
-                'email': email,
-                'website': website,
-                'working_hours': working_hours,
-                'organization_type': org_type,
-                'additional_info': additional_info
-            }
-            
-            contact_info_json = json.dumps(contact_info)
-            
             cur.execute(
                 f"""
                 INSERT INTO {SCHEMA}.organization_requests 
-                (user_id, organization_name, description, contact_info)
-                VALUES (%s, %s, %s, %s::jsonb)
+                (user_id, organization_name, organization_type, description, address, phone, email, website, working_hours, additional_info)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (user['id'], org_name, description, contact_info_json)
+                (user['id'], org_name, org_type, description, address, phone, email, website, working_hours, additional_info)
             )
             conn.commit()
             
