@@ -242,7 +242,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Long poll — ждём одобрения сброса пароля (до 20 сек)
+        # Long poll — ждём одобрения/отклонения сброса пароля (до 20 сек)
         if method == 'GET' and action == 'wait-password-reset':
             import time
             deadline = time.time() + 20
@@ -256,7 +256,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     return {
                         'statusCode': 200,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                        'body': json.dumps({'approved': True}),
+                        'body': json.dumps({'result': 'approved'}),
+                        'isBase64Encoded': False
+                    }
+                if row and row['status'] == 'rejected':
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'result': 'rejected'}),
                         'isBase64Encoded': False
                     }
                 time.sleep(1)
@@ -265,7 +272,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'approved': False}),
+                'body': json.dumps({'result': 'pending'}),
                 'isBase64Encoded': False
             }
 

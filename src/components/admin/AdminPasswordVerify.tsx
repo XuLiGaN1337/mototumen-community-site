@@ -11,7 +11,7 @@ interface AdminPasswordVerifyProps {
   userName?: string;
 }
 
-type Screen = 'verify' | 'requested' | 'setup';
+type Screen = 'verify' | 'requested' | 'setup' | 'rejected';
 
 export const AdminPasswordVerify: React.FC<AdminPasswordVerifyProps> = ({
   onVerified,
@@ -78,10 +78,15 @@ export const AdminPasswordVerify: React.FC<AdminPasswordVerifyProps> = ({
           });
           if (cancelled) return;
           const data = await res.json();
-          if (res.ok && data.approved) {
+          if (res.ok && data.result === 'approved') {
             setScreen('setup');
             return;
           }
+          if (res.ok && data.result === 'rejected') {
+            setScreen('rejected');
+            return;
+          }
+          // result === 'pending' — сразу повторяем
         } catch {
           if (cancelled) return;
           await new Promise(r => setTimeout(r, 2000));
@@ -185,6 +190,39 @@ export const AdminPasswordVerify: React.FC<AdminPasswordVerifyProps> = ({
             <Icon name="ArrowLeft" className="w-4 h-4 mr-2" />
             Попробовать ввести пароль
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // === Экран отклонения запроса ===
+  if (screen === 'rejected') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card p-8 rounded-lg shadow-xl max-w-md w-full border border-red-500/30 text-center space-y-5">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/10 rounded-full">
+            <Icon name="XCircle" className="w-8 h-8 text-red-500" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Запрос отклонён</h2>
+            <p className="text-sm text-muted-foreground">
+              CEO отклонил ваш запрос на сброс пароля. Попробуйте ввести пароль или обратитесь повторно позже.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button onClick={() => setScreen('verify')} className="w-full">
+              <Icon name="ArrowLeft" className="w-4 h-4 mr-2" />
+              Попробовать ввести пароль
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => { setScreen('requested'); handleRequestReset(); }}
+              className="w-full text-sm"
+            >
+              <Icon name="RefreshCw" className="w-4 h-4 mr-2" />
+              Отправить запрос повторно
+            </Button>
+          </div>
         </div>
       </div>
     );
