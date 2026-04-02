@@ -51,13 +51,32 @@ export const AdminPasswordSettings: React.FC<AdminPasswordSettingsProps> = ({
     } catch { /* silent */ }
   }, [isCEO, token, adminApi]);
 
-  // Поллинг для CEO — каждые 10 секунд
+  // Long poll для CEO — висим и ждём новых запросов
   useEffect(() => {
     if (!isCEO) return;
+    let cancelled = false;
     fetchResetRequests();
-    const interval = setInterval(fetchResetRequests, 10000);
-    return () => clearInterval(interval);
-  }, [isCEO, fetchResetRequests]);
+
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const res = await fetch(`${adminApi}?action=wait-reset-requests`, {
+            headers: { 'X-Auth-Token': token || '' },
+          });
+          if (cancelled) return;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.requests) setResetRequests(data.requests);
+          }
+        } catch {
+          if (cancelled) return;
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      }
+    };
+    poll();
+    return () => { cancelled = true; };
+  }, [isCEO, token, adminApi, fetchResetRequests]);
 
   const handleChangePassword = async () => {
     if (newPassword.length < 6) { setError('Новый пароль должен быть не менее 6 символов'); return; }

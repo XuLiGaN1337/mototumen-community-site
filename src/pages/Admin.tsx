@@ -12,7 +12,7 @@ import { AdminContent } from "@/components/admin/AdminContent";
 import { getRoleEmoji, getRoleLabel } from "@/components/admin/RoleBadge";
 import { AdminPasswordSetup } from "@/components/admin/AdminPasswordSetup";
 import { AdminPasswordVerify } from "@/components/admin/AdminPasswordVerify";
-import { SettingsMenu } from "@/components/admin/SettingsMenu";
+import { AdminPasswordSettings } from "@/components/admin/AdminPasswordSettings";
 import { AdminSellers } from "@/components/admin/AdminSellers";
 import AdminSeasons from "@/components/admin/AdminSeasons";
 
@@ -261,14 +261,23 @@ const Admin = () => {
               <span className="text-lg leading-none">🍁</span>
               <span className="text-[10px] md:text-xs leading-tight">Сезоны</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" onClick={() => navigate('/settings')} className="flex flex-col gap-0.5 h-auto py-2">
-              <span className="text-lg leading-none">⚙️</span>
-              <span className="text-[10px] md:text-xs leading-tight">Настройки</span>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
             <AdminDashboard stats={stats} recentActivity={recentActivity} />
+            {user?.role === 'ceo' && (
+              <AdminPasswordSettings
+                adminApi={ADMIN_API}
+                users={users}
+                onPasswordReset={async () => {
+                  const usersRes = await fetch(`${ADMIN_API}?action=users`, {
+                    headers: { 'X-Auth-Token': token || '' }
+                  });
+                  const usersData = await usersRes.json();
+                  setUsers(usersData.users || []);
+                }}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="organizations" className="space-y-6">
@@ -297,19 +306,7 @@ const Admin = () => {
             <AdminSeasons />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-6">
-            <SettingsMenu 
-              adminApi={ADMIN_API} 
-              users={users}
-              onUsersUpdate={async () => {
-                const usersRes = await fetch(`${ADMIN_API}?action=users`, {
-                  headers: { 'X-Auth-Token': token || '' }
-                });
-                const usersData = await usersRes.json();
-                setUsers(usersData.users || []);
-              }}
-            />
-          </TabsContent>
+
         </Tabs>
       </div>
     </div>

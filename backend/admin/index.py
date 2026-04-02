@@ -314,6 +314,56 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
+        # CEO: Long poll — ждём новых запросов на сброс (до 20 сек)
+        if method == 'GET' and action == 'wait-reset-requests':
+            if user['role'] != 'ceo':
+                return {
+                    'statusCode': 403,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'Только CEO'}),
+                    'isBase64Encoded': False
+                }
+            import time
+            deadline = time.time() + 20
+            prev_count = None
+            while time.time() < deadline:
+                conn2 = get_db_connection()
+                cur2 = conn2.cursor()
+                cur2.execute(f"""
+                    SELECT prr.id, prr.user_id, prr.status, prr.created_at,
+                           u.name, u.email, u.role
+                    FROM {SCHEMA}.password_reset_requests prr
+                    JOIN {SCHEMA}.users u ON prr.user_id = u.id
+                    WHERE prr.status = 'pending'
+                    ORDER BY prr.created_at DESC
+                """)
+                rows = cur2.fetchall()
+                conn2.close()
+                current_count = len(rows)
+                if prev_count is None:
+                    prev_count = current_count
+                    if current_count > 0:
+                        return {
+                            'statusCode': 200,
+                            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                            'body': json.dumps({'requests': rows}, default=str),
+                            'isBase64Encoded': False
+                        }
+                elif current_count != prev_count:
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'requests': rows}, default=str),
+                        'isBase64Encoded': False
+                    }
+                time.sleep(1)
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'requests': []}),
+                'isBase64Encoded': False
+            }
+
         # CEO: Список запросов на сброс пароля
         if method == 'GET' and action == 'password-reset-requests':
             if user['role'] != 'ceo':
