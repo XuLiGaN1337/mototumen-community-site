@@ -18,7 +18,7 @@ interface BoardItem {
   created_at?: string;
 }
 
-const API_URL = "https://functions.poehali.dev/5b8dbbf1-556a-43c8-b39c-e8096eebd5d4";
+const API_URL = "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388";
 
 const BoardSection: React.FC = () => {
   const [announcements, setAnnouncements] = useState<BoardItem[]>([]);
