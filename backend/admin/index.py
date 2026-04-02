@@ -792,19 +792,42 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Статистика
         if method == 'GET' and action == 'stats':
             cur.execute(f"""
-                SELECT 
-                    (SELECT COUNT(*) FROM {SCHEMA}.users) as total_users,
-                    (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role = 'admin' OR role = 'ceo' OR role = 'moderator') as total_admins,
+                SELECT
+                    (SELECT COUNT(*) FROM {SCHEMA}.users WHERE is_hidden = false) as total_users,
+                    (SELECT COUNT(*) FROM {SCHEMA}.users WHERE is_hidden = false AND created_at > NOW() - INTERVAL '30 days') as new_users_30d,
+                    (SELECT COUNT(*) FROM {SCHEMA}.users WHERE is_hidden = false AND created_at > NOW() - INTERVAL '7 days') as new_users_7d,
                     (SELECT COUNT(*) FROM {SCHEMA}.user_sessions WHERE expires_at > NOW()) as active_sessions,
-                    (SELECT COUNT(*) FROM {SCHEMA}.organizations) as total_organizations
+                    (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role IN ('admin','ceo','moderator') AND is_hidden = false) as total_admins,
+                    (SELECT COUNT(*) FROM {SCHEMA}.user_friends WHERE status = 'accepted') as total_friendships,
+                    (SELECT COUNT(*) FROM {SCHEMA}.user_friends WHERE status = 'pending') as pending_friend_requests,
+                    (SELECT COUNT(*) FROM {SCHEMA}.user_vehicles) as total_vehicles,
+                    (SELECT COUNT(*) FROM {SCHEMA}.announcements) as total_announcements,
+                    (SELECT COUNT(*) FROM {SCHEMA}.shops) as total_shops,
+                    (SELECT COUNT(*) FROM {SCHEMA}.schools) as total_schools,
+                    (SELECT COUNT(*) FROM {SCHEMA}.services) as total_services,
+                    (SELECT COUNT(*) FROM {SCHEMA}.organizations WHERE status = 'approved') as total_organizations,
+                    (SELECT COUNT(*) FROM {SCHEMA}.organization_requests WHERE status = 'pending') as pending_org_requests,
+                    (SELECT COUNT(*) FROM {SCHEMA}.password_reset_requests WHERE status = 'pending') as pending_password_resets
             """)
-            
-            stats = cur.fetchone()
-            
+            stats_row = cur.fetchone()
+
+            cur.execute(f"""
+                SELECT ual.id, ual.action, ual.created_at,
+                       u.name as user_name, u.role as user_role
+                FROM {SCHEMA}.user_activity_log ual
+                LEFT JOIN {SCHEMA}.users u ON ual.user_id = u.id
+                ORDER BY ual.created_at DESC
+                LIMIT 10
+            """)
+            recent_activity = cur.fetchall()
+
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps(dict(stats)),
+                'body': json.dumps({
+                    'stats': dict(stats_row),
+                    'recent_activity': [dict(a) for a in recent_activity]
+                }, default=str),
                 'isBase64Encoded': False
             }
         

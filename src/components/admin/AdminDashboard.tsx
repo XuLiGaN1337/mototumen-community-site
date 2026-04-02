@@ -1,121 +1,209 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
+import { Badge } from "@/components/ui/badge";
 
-interface AdminDashboardProps {
-  stats: any;
-  recentActivity: any[];
+interface Stats {
+  total_users: number;
+  new_users_30d: number;
+  new_users_7d: number;
+  active_sessions: number;
+  total_admins: number;
+  total_friendships: number;
+  pending_friend_requests: number;
+  total_vehicles: number;
+  total_announcements: number;
+  total_shops: number;
+  total_schools: number;
+  total_services: number;
+  total_organizations: number;
+  pending_org_requests: number;
+  pending_password_resets: number;
 }
 
-const getRoleEmoji = (role: string): string => {
-  const roleEmojis: Record<string, string> = {
-    superadmin: " 👑",
-    admin: " ⚡",
-    moderator: " 🛡️",
-    premium: " 💎",
-    user: "",
-  };
-  return roleEmojis[role] || "";
+interface Activity {
+  id: number;
+  action: string;
+  user_name: string;
+  user_role: string;
+  created_at: string;
+}
+
+interface AdminDashboardProps {
+  stats: Stats | null;
+  recentActivity: Activity[];
+}
+
+const ROLE_EMOJI: Record<string, string> = {
+  ceo: '👑', admin: '⚡', moderator: '🛡️', user: '👤',
 };
 
+const ACTION_ICON: Record<string, string> = {
+  'Вход в систему': 'LogIn',
+  'Регистрация': 'UserPlus',
+  'Редактирование роли': 'Shield',
+  'Удаление пользователя': 'UserX',
+};
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'только что';
+  if (m < 60) return `${m} мин назад`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} ч назад`;
+  const d = Math.floor(h / 24);
+  return `${d} дн назад`;
+}
+
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  sub?: string;
+  icon: string;
+  accent?: boolean;
+  alert?: boolean;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, sub, icon, accent, alert }) => (
+  <Card className={alert ? 'border-orange-500/50 bg-orange-500/5' : ''}>
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${accent ? 'bg-primary/10' : alert ? 'bg-orange-500/10' : 'bg-muted'}`}>
+        <Icon name={icon as 'Users'} className={`h-4 w-4 ${accent ? 'text-primary' : alert ? 'text-orange-500' : 'text-muted-foreground'}`} />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className={`text-2xl font-bold ${alert && Number(value) > 0 ? 'text-orange-500' : ''}`}>{value}</div>
+      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+    </CardContent>
+  </Card>
+);
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, recentActivity }) => {
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="pb-2"><div className="h-4 bg-muted rounded w-2/3" /></CardHeader>
+            <CardContent><div className="h-8 bg-muted rounded w-1/2 mb-1" /><div className="h-3 bg-muted rounded w-1/3" /></CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Всего пользователей
-            </CardTitle>
-            <Icon
-              name="Users"
-              className="h-4 w-4 text-muted-foreground"
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.active_users || 0} активных
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Магазины</CardTitle>
-            <Icon
-              name="Store"
-              className="h-4 w-4 text-muted-foreground"
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats?.total_shops || 0}
+      {/* Срочные уведомления */}
+      {(stats.pending_org_requests > 0 || stats.pending_password_resets > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {stats.pending_org_requests > 0 && (
+            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-2 text-sm text-orange-400">
+              <Icon name="Building2" className="h-4 w-4" />
+              <span>{stats.pending_org_requests} заявок на организацию</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Активных точек продаж
-            </p>
-          </CardContent>
-        </Card>
+          )}
+          {stats.pending_password_resets > 0 && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-sm text-red-400">
+              <Icon name="Key" className="h-4 w-4" />
+              <span>{stats.pending_password_resets} запросов сброса пароля</span>
+            </div>
+          )}
+        </div>
+      )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Объявления</CardTitle>
-            <Icon
-              name="MessageSquare"
-              className="h-4 w-4 text-muted-foreground"
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_announcements || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Всего в системе
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Школы</CardTitle>
-            <Icon
-              name="GraduationCap"
-              className="h-4 w-4 text-muted-foreground"
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_schools || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Учебных заведений
-            </p>
-          </CardContent>
-        </Card>
+      {/* Основные карточки */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard
+          title="Пользователи"
+          value={stats.total_users}
+          sub={`+${stats.new_users_7d} за неделю`}
+          icon="Users"
+          accent
+        />
+        <StatCard
+          title="Активных сессий"
+          value={stats.active_sessions}
+          sub="Сейчас онлайн"
+          icon="Activity"
+          accent
+        />
+        <StatCard
+          title="Дружбы"
+          value={stats.total_friendships}
+          sub={`${stats.pending_friend_requests} ожидают`}
+          icon="Heart"
+        />
+        <StatCard
+          title="Техника в гаражах"
+          value={stats.total_vehicles}
+          sub="Мотоциклы и другое"
+          icon="Bike"
+        />
       </div>
 
+      {/* Контент */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard title="Объявления" value={stats.total_announcements} sub="В базе данных" icon="FileText" />
+        <StatCard title="Магазины" value={stats.total_shops} sub="Активных точек" icon="Store" />
+        <StatCard title="Мотошколы" value={stats.total_schools} sub="Учебных заведений" icon="GraduationCap" />
+        <StatCard title="Сервисы" value={stats.total_services} sub="Мастерских" icon="Wrench" />
+      </div>
+
+      {/* Организации + ожидание */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard title="Организации" value={stats.total_organizations} sub="Одобрено" icon="Building2" />
+        <StatCard
+          title="Заявок орг."
+          value={stats.pending_org_requests}
+          sub="Ожидают решения"
+          icon="Clock"
+          alert={stats.pending_org_requests > 0}
+        />
+        <StatCard title="Администраторов" value={stats.total_admins} sub="CEO, Admin, Moder" icon="Shield" />
+        <StatCard
+          title="Новых за месяц"
+          value={stats.new_users_30d}
+          sub="Регистраций"
+          icon="UserPlus"
+          accent
+        />
+      </div>
+
+      {/* Последняя активность */}
       <Card>
         <CardHeader>
-          <CardTitle>Последние действия</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Icon name="Activity" className="h-4 w-4" />
+            Последние действия
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentActivity.length > 0 ? (
-              recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-4">
-                  <Icon name="Activity" className="h-4 w-4 text-blue-500" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.user_name}{getRoleEmoji(activity.user_role || 'user')} • {activity.location || 'Неизвестно'}
+          {recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {recentActivity.map((a, i) => (
+                <div key={a.id ?? i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-sm">
+                    {ROLE_EMOJI[a.user_role] || '👤'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {a.user_name}
+                      <span className="text-muted-foreground font-normal"> — {a.action}</span>
                     </p>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(activity.created_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' })}
-                  </div>
+                  <Badge variant="outline" className="text-xs flex-shrink-0 hidden sm:flex">
+                    {timeAgo(a.created_at)}
+                  </Badge>
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Нет активности</p>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">Нет данных об активности</p>
+          )}
         </CardContent>
       </Card>
     </div>
