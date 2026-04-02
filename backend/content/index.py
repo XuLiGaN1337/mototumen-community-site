@@ -153,7 +153,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cur.execute(base)
                 
             elif content_type == 'announcements':
-                query = "SELECT * FROM announcements WHERE status = 'active'"
+                my = query_params.get('my') == 'true'
+                if my:
+                    # Мои объявления — только авторизованный пользователь
+                    headers = event.get('headers', {})
+                    token = get_header(headers, 'X-Auth-Token') or get_header(headers, 'X-Authorization')
+                    if not token:
+                        return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Требуется авторизация'}), 'isBase64Encoded': False}
+                    auth_user = get_user_from_token(cur, token)
+                    if not auth_user:
+                        return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Неверный токен'}), 'isBase64Encoded': False}
+                    query = f"SELECT * FROM {SCHEMA}.announcements WHERE user_id = {auth_user['id']} AND status != 'archived'"
+                else:
+                    query = f"SELECT * FROM {SCHEMA}.announcements WHERE status = 'active'"
                 
                 if category and category != 'Все':
                     escaped_cat = category.replace("'", "''")

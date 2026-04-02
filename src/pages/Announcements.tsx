@@ -25,6 +25,7 @@ interface Announcement {
   location?: string;
   created_at?: string;
   user_id?: number;
+  status?: string;
 }
 
 const API_URL = "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388";
@@ -32,7 +33,7 @@ const API_URL = "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313
 const categories = ["Продажа", "Покупка", "Попутчики", "Услуги", "Обучение", "Эвакуатор", "Общее"];
 const filterCategories = ["Все", ...categories];
 
-const emptyForm = (): Omit<Announcement, "author"> => ({
+const emptyForm = () => ({
   title: "",
   description: "",
   category: "",
@@ -42,7 +43,10 @@ const emptyForm = (): Omit<Announcement, "author"> => ({
   image: "",
 });
 
+type Tab = "public" | "my";
+
 const Announcements: React.FC = () => {
+  const [tab, setTab] = useState<Tab>("public");
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,20 +61,26 @@ const Announcements: React.FC = () => {
 
   const toggleExpanded = (id: number) => {
     setExpandedCards(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      return newSet;
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      return next;
     });
   };
 
-  const loadAnnouncements = async () => {
+  const loadAnnouncements = async (currentTab: Tab = tab) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({ type: "announcements" });
-      if (selectedCategory !== "Все") params.append("category", selectedCategory);
-      if (searchTerm) params.append("search", searchTerm);
-      const response = await fetch(`${API_URL}?${params}`);
+      if (currentTab === "my") {
+        params.append("my", "true");
+      } else {
+        if (selectedCategory !== "Все") params.append("category", selectedCategory);
+        if (searchTerm) params.append("search", searchTerm);
+      }
+      const headers: Record<string, string> = {};
+      if (token) headers["X-Auth-Token"] = token;
+      const response = await fetch(`${API_URL}?${params}`, { headers });
+      if (!response.ok) { setAnnouncements([]); return; }
       const data = await response.json();
       setAnnouncements(Array.isArray(data) ? data : []);
     } catch {
@@ -80,10 +90,17 @@ const Announcements: React.FC = () => {
     }
   };
 
-  useEffect(() => { loadAnnouncements(); }, [selectedCategory]);
+  useEffect(() => { loadAnnouncements(tab); }, [tab, selectedCategory]);
 
   const handleSearch = () => loadAnnouncements();
   const clearFilters = () => { setSearchTerm(""); setSelectedCategory("Все"); };
+
+  const handleTabChange = (t: Tab) => {
+    if (t === "my" && !isAuthenticated) { setShowAuthModal(true); return; }
+    setTab(t);
+    setSearchTerm("");
+    setSelectedCategory("Все");
+  };
 
   const handleContactClick = (contact: string) => {
     if (!isAuthenticated) { setShowAuthModal(true); return; }
@@ -102,13 +119,15 @@ const Announcements: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!token || !confirm("Удалить объявление?")) return;
     try {
-      await fetch(`${API_URL}?type=announcements`, {
+      const res = await fetch(`${API_URL}?type=announcements`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json", "X-Auth-Token": token },
         body: JSON.stringify({ id }),
       });
-      setAnnouncements(prev => prev.filter(a => a.id !== id));
-      toast({ title: "Удалено" });
+      if (res.ok) {
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        toast({ title: "Объявление удалено" });
+      }
     } catch {
       toast({ title: "Ошибка", variant: "destructive" });
     }
@@ -117,23 +136,21 @@ const Announcements: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    if (!form.category) {
-      toast({ title: "Выберите категорию", variant: "destructive" });
-      return;
-    }
+    if (!form.category) { toast({ title: "Выберите категорию", variant: "destructive" }); return; }
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_URL}?type=announcements`, {
+      const res = await fetch(`${API_URL}?type=announcements`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": token },
         body: JSON.stringify(form),
       });
-      if (response.ok) {
+      if (res.ok) {
         toast({ title: "Объявление опубликовано!" });
         setShowCreateModal(false);
-        loadAnnouncements();
+        loadAnnouncements("public");
+        setTab("public");
       } else {
-        const err = await response.json();
+        const err = await res.json();
         toast({ title: err.error || "Ошибка", variant: "destructive" });
       }
     } catch {
@@ -146,82 +163,107 @@ const Announcements: React.FC = () => {
   return (
     <PageLayout>
       {/* Hero */}
-      <section className="bg-dark-900 text-white py-8 sm:py-14 md:py-20">
+      <section className="bg-dark-900 text-white py-8 sm:py-12 md:py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-3 sm:mb-6 tracking-tight font-['Oswald']">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-3 tracking-tight font-['Oswald']">
             МОТО‑АВИТО
           </h1>
           <p className="text-base sm:text-xl text-gray-300 max-w-2xl mx-auto mb-6">
             Доска объявлений мотосообщества Тюмени
           </p>
-          <Button
-            onClick={handleCreateClick}
-            className="bg-accent hover:bg-accent/90 text-white gap-2 text-base px-6 py-5"
-          >
-            <Icon name="Plus" size={20} />
-            Подать объявление
-          </Button>
+
+          {/* Tabs */}
+          <div className="flex justify-center gap-2">
+            <Button
+              variant={tab === "public" ? "default" : "outline"}
+              className={tab === "public" ? "bg-accent hover:bg-accent/90 text-white" : "border-zinc-600 text-zinc-300 hover:text-white hover:border-zinc-400"}
+              onClick={() => handleTabChange("public")}
+            >
+              <Icon name="Globe" size={16} className="mr-2" />
+              Опубликованные
+            </Button>
+            <Button
+              variant={tab === "my" ? "default" : "outline"}
+              className={tab === "my" ? "bg-accent hover:bg-accent/90 text-white" : "border-zinc-600 text-zinc-300 hover:text-white hover:border-zinc-400"}
+              onClick={() => handleTabChange("my")}
+            >
+              <Icon name="User" size={16} className="mr-2" />
+              Мои объявления
+            </Button>
+          </div>
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="py-4 sm:py-6 px-4 bg-zinc-900/50 border-b border-zinc-800 sticky top-14 sm:top-16 z-30">
-        <div className="container mx-auto">
-          <div className="flex flex-col gap-3">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Поиск объявлений..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="bg-zinc-800 border-zinc-700 text-white flex-1"
-              />
-              <Button onClick={handleSearch} className="bg-accent hover:bg-accent/90 px-3">
-                <Icon name="Search" className="h-4 w-4" />
-              </Button>
-              {(searchTerm || selectedCategory !== "Все") && (
-                <Button variant="ghost" onClick={clearFilters} className="text-zinc-400 hover:text-white px-3">
-                  <Icon name="X" className="h-4 w-4" />
+      {/* Filters (только для публичной вкладки) */}
+      {tab === "public" && (
+        <section className="py-4 sm:py-5 px-4 bg-zinc-900/50 border-b border-zinc-800 sticky top-14 sm:top-16 z-30">
+          <div className="container mx-auto">
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Поиск объявлений..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="bg-zinc-800 border-zinc-700 text-white flex-1"
+                />
+                <Button onClick={handleSearch} className="bg-accent hover:bg-accent/90 px-3">
+                  <Icon name="Search" className="h-4 w-4" />
                 </Button>
-              )}
+                {(searchTerm || selectedCategory !== "Все") && (
+                  <Button variant="ghost" onClick={clearFilters} className="text-zinc-400 hover:text-white px-3">
+                    <Icon name="X" className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+                {filterCategories.map((cat) => (
+                  <Badge
+                    key={cat}
+                    variant={selectedCategory === cat ? "default" : "outline"}
+                    className={`cursor-pointer whitespace-nowrap flex-shrink-0 text-xs sm:text-sm py-1 px-2 sm:px-3 ${
+                      selectedCategory === cat ? "bg-accent hover:bg-accent/90" : "hover:bg-zinc-800"
+                    }`}
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat}
+                  </Badge>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-              {filterCategories.map((category) => (
-                <Badge
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  className={`cursor-pointer whitespace-nowrap flex-shrink-0 text-xs sm:text-sm py-1 px-2 sm:px-3 ${
-                    selectedCategory === category ? "bg-accent hover:bg-accent/90" : "hover:bg-zinc-800"
-                  }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Badge>
-              ))}
+            <div className="mt-2 text-xs sm:text-sm text-zinc-400">
+              {loading ? "Загрузка..." : <>Найдено: <span className="text-white font-medium">{announcements.length}</span></>}
             </div>
           </div>
-          <div className="mt-2 text-xs sm:text-sm text-zinc-400">
-            {loading ? "Загрузка..." : <>Найдено: <span className="text-white font-medium">{announcements.length}</span></>}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Grid */}
-      <section className="py-6 sm:py-10 px-4 min-h-screen">
+      <section className="py-6 sm:py-10 px-4 pb-28 min-h-screen">
         <div className="container mx-auto">
+          {tab === "my" && (
+            <div className="mb-4 text-sm text-zinc-400">
+              {loading ? "Загрузка..." : <><span className="text-white font-medium">{announcements.length}</span> {announcements.length === 1 ? "объявление" : "объявлений"}</>}
+            </div>
+          )}
           {loading ? (
-            <div className="text-center py-12"><p className="text-zinc-400">Загрузка объявлений...</p></div>
-          ) : announcements.length === 0 ? (
             <div className="text-center py-12">
+              <Icon name="Loader2" className="h-8 w-8 animate-spin text-accent mx-auto" />
+            </div>
+          ) : announcements.length === 0 ? (
+            <div className="text-center py-16">
               <Icon name="Inbox" className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
-              <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Объявлений не найдено</h3>
-              <p className="text-zinc-400 mb-4 text-sm sm:text-base">
-                {searchTerm || selectedCategory !== "Все" ? "Попробуйте изменить фильтры" : "Пока нет объявлений"}
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                {tab === "my" ? "У вас нет объявлений" : "Объявлений не найдено"}
+              </h3>
+              <p className="text-zinc-400 mb-6 text-sm">
+                {tab === "my"
+                  ? "Нажмите «Подать объявление», чтобы опубликовать первое"
+                  : searchTerm || selectedCategory !== "Все" ? "Попробуйте изменить фильтры" : "Пока нет объявлений"}
               </p>
-              <Button onClick={handleCreateClick} className="bg-accent hover:bg-accent/90 gap-2">
-                <Icon name="Plus" size={16} />
-                Подать первое объявление
-              </Button>
+              {tab === "public" && (searchTerm || selectedCategory !== "Все") && (
+                <Button onClick={clearFilters} variant="outline">Сбросить фильтры</Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -233,11 +275,11 @@ const Announcements: React.FC = () => {
                     <CardHeader className="pb-2 p-4">
                       <div className="flex items-start justify-between mb-2">
                         <Badge className="bg-purple-500 text-white text-xs">{ann.category}</Badge>
-                        <div className="flex items-center gap-2 ml-2">
-                          <span className="text-xs text-zinc-400 flex-shrink-0">
+                        <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                          <span className="text-xs text-zinc-400">
                             {ann.created_at ? new Date(ann.created_at).toLocaleDateString("ru-RU") : ""}
                           </span>
-                          {isOwner && (
+                          {(isOwner || tab === "my") && (
                             <button
                               onClick={() => handleDelete(ann.id!)}
                               className="text-zinc-500 hover:text-red-400 transition-colors"
@@ -290,14 +332,16 @@ const Announcements: React.FC = () => {
                         )}
                       </div>
 
-                      <Button
-                        size="sm"
-                        className="w-full bg-accent hover:bg-accent/90 text-white mt-auto"
-                        onClick={() => handleContactClick(ann.contact)}
-                      >
-                        <Icon name="MessageCircle" className="h-4 w-4 mr-2" />
-                        Написать
-                      </Button>
+                      {tab !== "my" && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-accent hover:bg-accent/90 text-white mt-auto"
+                          onClick={() => handleContactClick(ann.contact)}
+                        >
+                          <Icon name="MessageCircle" className="h-4 w-4 mr-2" />
+                          Написать
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -306,6 +350,17 @@ const Announcements: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* Sticky кнопка снизу */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        <Button
+          onClick={handleCreateClick}
+          className="bg-accent hover:bg-accent/90 text-white gap-2 px-6 py-5 text-base shadow-2xl shadow-accent/30 rounded-full"
+        >
+          <Icon name="Plus" size={20} />
+          Подать объявление
+        </Button>
+      </div>
 
       {/* Create Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
@@ -386,7 +441,9 @@ const Announcements: React.FC = () => {
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" className="flex-1 bg-accent hover:bg-accent/90" disabled={submitting}>
-                {submitting ? <Icon name="Loader2" className="animate-spin mr-2" size={16} /> : <Icon name="Send" className="mr-2" size={16} />}
+                {submitting
+                  ? <Icon name="Loader2" className="animate-spin mr-2" size={16} />
+                  : <Icon name="Send" className="mr-2" size={16} />}
                 Опубликовать
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
