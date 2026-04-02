@@ -805,7 +805,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     (SELECT COUNT(*) FROM {SCHEMA}.shops) as total_shops,
                     (SELECT COUNT(*) FROM {SCHEMA}.schools) as total_schools,
                     (SELECT COUNT(*) FROM {SCHEMA}.services) as total_services,
-                    (SELECT COUNT(*) FROM {SCHEMA}.organizations WHERE status = 'approved') as total_organizations,
+                    (SELECT COUNT(*) FROM {SCHEMA}.organizations) as total_organizations,
                     (SELECT COUNT(*) FROM {SCHEMA}.organization_requests WHERE status = 'pending') as pending_org_requests,
                     (SELECT COUNT(*) FROM {SCHEMA}.password_reset_requests WHERE status = 'pending') as pending_password_resets
             """)
