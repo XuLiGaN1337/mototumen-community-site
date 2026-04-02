@@ -32,7 +32,7 @@ interface AdminModerationProps {
   onReject: (id: string) => void;
 }
 
-const ADMIN_API = 'https://functions.poehali.dev/a4bf4de7-33a4-406c-95cc-0529c16d6677';
+const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
 
 export const AdminModeration: React.FC<AdminModerationProps> = ({ 
   pendingItems, 

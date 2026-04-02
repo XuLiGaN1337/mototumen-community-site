@@ -16,10 +16,10 @@ import { SettingsMenu } from "@/components/admin/SettingsMenu";
 import { AdminSellers } from "@/components/admin/AdminSellers";
 import AdminSeasons from "@/components/admin/AdminSeasons";
 
-const ADMIN_API = 'https://functions.poehali.dev/a4bf4de7-33a4-406c-95cc-0529c16d6677';
+const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
 
 const Admin = () => {
-  const { user, isAdmin, token } = useAuth();
+  const { user, isAdmin, token, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -30,8 +30,12 @@ const Admin = () => {
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!token) {
+      setHasPassword(false);
+      return;
+    }
     const checkPassword = async () => {
-      if (!token) return;
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 8000);
@@ -41,18 +45,14 @@ const Admin = () => {
         });
         clearTimeout(timeout);
         const data = await res.json();
-        if (res.ok) {
-          setHasPassword(data.hasPassword);
-        } else {
-          setHasPassword(false);
-        }
+        setHasPassword(res.ok ? Boolean(data.hasPassword) : false);
       } catch (error) {
         console.error('[ADMIN] Failed to check password status:', error);
         setHasPassword(false);
       }
     };
     checkPassword();
-  }, [token]);
+  }, [token, authLoading]);
 
   useEffect(() => {
     if (!isAdmin || !token || hasPassword === null || (hasPassword && !isPasswordVerified)) return;
@@ -83,6 +83,14 @@ const Admin = () => {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [isAdmin, token, hasPassword, isPasswordVerified]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#004488]"></div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
