@@ -73,6 +73,8 @@ const Help = () => {
     }
   };
 
+  const [isSending, setIsSending] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -85,19 +87,40 @@ const Help = () => {
       return;
     }
 
-    toast({
-      title: "Заявка отправлена!",
-      description: "Мы свяжемся с вами в ближайшее время",
-    });
+    setIsSending(true);
+    try {
+      const resp = await fetch('https://functions.poehali.dev/017291b0-c2cc-4ab9-a029-7d5505e77fcd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_name:   user?.name || 'Не указано',
+          user_phone:  formData.phone || user?.phone || 'Не указан',
+          moto_model:  formData.motoModel,
+          moto_year:   formData.motoYear,
+          moto_plate:  formData.motoPlate,
+          problem:     formData.problemDescription,
+          location:    formData.location,
+        }),
+      });
 
-    setFormData({
-      motoModel: "",
-      motoYear: "",
-      motoPlate: "",
-      problemDescription: "",
-      location: "",
-      phone: user?.phone || "",
-    });
+      if (resp.ok) {
+        toast({
+          title: "Заявка отправлена!",
+          description: "Ваш запрос опубликован в ветке помощи — скоро откликнутся",
+        });
+        setFormData({ motoModel: "", motoYear: "", motoPlate: "", problemDescription: "", location: "", phone: user?.phone || "" });
+      } else {
+        throw new Error('server error');
+      }
+    } catch {
+      toast({
+        title: "Ошибка отправки",
+        description: "Не удалось отправить заявку. Попробуйте ещё раз.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (isLoading) {
@@ -218,9 +241,9 @@ const Help = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-orange hover:bg-orange/90" size="lg">
-              <Icon name="Send" className="w-5 h-5 mr-2" />
-              Отправить заявку
+            <Button type="submit" className="w-full bg-orange hover:bg-orange/90" size="lg" disabled={isSending}>
+              <Icon name={isSending ? "Loader2" : "Send"} className={`w-5 h-5 mr-2 ${isSending ? 'animate-spin' : ''}`} />
+              {isSending ? 'Отправляем...' : 'Отправить заявку'}
             </Button>
           </form>
 
