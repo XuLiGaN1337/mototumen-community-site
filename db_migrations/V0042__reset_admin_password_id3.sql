@@ -1,0 +1,1 @@
+UPDATE users SET admin_password_hash = NULL WHERE id = 3;

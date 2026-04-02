@@ -36,11 +36,18 @@ const Admin = () => {
         const res = await fetch(`${ADMIN_API}?action=my-admin-password-status`, {
           headers: { 'X-Auth-Token': token }
         });
+        console.log('[ADMIN] password-status response:', res.status);
         const data = await res.json();
-        setHasPassword(data.hasPassword);
+        console.log('[ADMIN] password-status data:', data);
+        if (res.ok) {
+          setHasPassword(data.hasPassword);
+        } else {
+          console.error('[ADMIN] password-status error:', data);
+          // не меняем состояние — оставляем null (loader) чтобы не показывать форму установки при ошибке
+        }
       } catch (error) {
-        console.error('Failed to check password status:', error);
-        setHasPassword(false);
+        console.error('[ADMIN] Failed to check password status:', error);
+        // не меняем на false — оставляем null
       }
     };
     checkPassword();
