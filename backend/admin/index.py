@@ -86,8 +86,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         query_params = event.get('queryStringParameters', {}) or {}
         action = query_params.get('action', 'users')
-        
-        # Все действия требуют токен (индивидуальные пароли!)
+
+        # Публичный эндпоинт — организация по id (без токена)
+        if method == 'GET' and action == 'organization':
+            org_id = query_params.get('id')
+            if not org_id:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id required'}), 'isBase64Encoded': False}
+            cur.execute(f"SELECT * FROM {SCHEMA}.organizations WHERE id = {org_id} AND is_active = true")
+            org = cur.fetchone()
+            if not org:
+                return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Not found'}), 'isBase64Encoded': False}
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'organization': dict(org)}, default=str), 'isBase64Encoded': False}
+
+        # Все остальные действия требуют токен
         headers = event.get('headers', {})
         token = get_header(headers, 'X-Auth-Token') or get_header(headers, 'X-Authorization')
         print(f"[ADMIN] method={method} action={action} token={'YES' if token else 'NO'} headers={list(headers.keys())}")
@@ -690,7 +701,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             cur.execute(f"""
                 SELECT o.id, o.name as organization_name, o.type as organization_type,
                        o.category, o.description, o.address, o.phone, o.email,
-                       o.website, o.working_hours, o.is_active as status,
+                       o.website, o.working_hours,
+                       CASE WHEN o.is_active THEN 'approved' ELSE 'pending' END as status,
                        o.logo, o.created_at
                 FROM {SCHEMA}.organizations o
                 WHERE o.user_id = {user['id']} AND o.is_active = true
@@ -1193,17 +1205,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'success': True}),
                 'isBase64Encoded': False
             }
-
-        # Получить одну организацию по id (публично)
-        if method == 'GET' and action == 'organization':
-            org_id = query_params.get('id')
-            if not org_id:
-                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id required'}), 'isBase64Encoded': False}
-            cur.execute(f"SELECT * FROM {SCHEMA}.organizations WHERE id = {org_id} AND is_active = true")
-            org = cur.fetchone()
-            if not org:
-                return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Not found'}), 'isBase64Encoded': False}
-            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'organization': dict(org)}, default=str), 'isBase64Encoded': False}
 
         # Список магазинов
         if method == 'GET' and action == 'shops':
