@@ -545,6 +545,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     u.first_name,
                     u.last_name,
                     u.role,
+                    u.is_organization,
                     u.created_at,
                     u.updated_at,
                     up.avatar_url,

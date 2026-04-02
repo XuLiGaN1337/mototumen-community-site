@@ -20,6 +20,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  is_organization?: boolean;
   created_at: string;
   telegram_id?: number;
   username?: string;
@@ -236,9 +237,16 @@ export const UsersTab: React.FC = () => {
               </div>
 
               <div className="flex flex-col items-end gap-3">
-                <Badge className={getRoleBadgeColor(user.role)}>
-                  {getRoleLabel(user.role)}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {user.is_organization && (
+                    <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs">
+                      🏢 Организация
+                    </Badge>
+                  )}
+                  <Badge className={getRoleBadgeColor(user.role)}>
+                    {getRoleLabel(user.role)}
+                  </Badge>
+                </div>
 
                 {user.name === 'Anton' ? (
                   <div className="flex items-center gap-2 text-xs text-zinc-500">
