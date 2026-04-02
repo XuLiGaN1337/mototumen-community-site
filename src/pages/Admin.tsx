@@ -15,6 +15,7 @@ import { AdminPasswordVerify } from "@/components/admin/AdminPasswordVerify";
 import { AdminPasswordSettings } from "@/components/admin/AdminPasswordSettings";
 import { AdminSellers } from "@/components/admin/AdminSellers";
 import AdminSeasons from "@/components/admin/AdminSeasons";
+import { FiltersTab } from "@/components/admin/tabs/FiltersTab";
 
 const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
 
@@ -232,7 +233,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 gap-1 bg-background mb-8">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 gap-1 bg-background mb-8">
             <TabsTrigger value="dashboard" className="flex flex-col gap-0.5 h-auto py-2">
               <span className="text-lg leading-none">📊</span>
               <span className="text-[10px] md:text-xs leading-tight">Дашборд</span>
@@ -260,6 +261,10 @@ const Admin = () => {
             <TabsTrigger value="seasons" className="flex flex-col gap-0.5 h-auto py-2">
               <span className="text-lg leading-none">🍁</span>
               <span className="text-[10px] md:text-xs leading-tight">Сезоны</span>
+            </TabsTrigger>
+            <TabsTrigger value="filters" className="flex flex-col gap-0.5 h-auto py-2">
+              <span className="text-lg leading-none">🏷️</span>
+              <span className="text-[10px] md:text-xs leading-tight">Фильтры</span>
             </TabsTrigger>
           </TabsList>
 
@@ -304,6 +309,10 @@ const Admin = () => {
 
           <TabsContent value="seasons" className="space-y-6">
             <AdminSeasons />
+          </TabsContent>
+
+          <TabsContent value="filters" className="space-y-6">
+            <FiltersTab />
           </TabsContent>
 
 

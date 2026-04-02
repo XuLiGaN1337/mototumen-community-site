@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { Shop, Organization, SHOP_CATEGORIES, getCardLabelPlural } from './orgTypes';
+import { useFilterCategories } from '@/hooks/useFilterCategories';
 
 interface ShopsSectionProps {
   selectedOrg: Organization;
@@ -30,6 +31,7 @@ const ShopsSection: React.FC<ShopsSectionProps> = ({
   onStartNew, onStartEdit, onDelete, onSave, onImageChange, onCloseForm,
 }) => {
   const labelPlural = getCardLabelPlural(selectedOrg.organization_type);
+  const shopCategories = useFilterCategories("shops", SHOP_CATEGORIES);
 
   return (
     <>
@@ -125,7 +127,7 @@ const ShopsSection: React.FC<ShopsSectionProps> = ({
                   <label className="text-sm font-medium">Категория *</label>
                   <Select value={editingShop.category} onValueChange={(v) => setEditingShop({ ...editingShop, category: v })}>
                     <SelectTrigger><SelectValue placeholder="Выберите категорию" /></SelectTrigger>
-                    <SelectContent>{SHOP_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectContent>{shopCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
 

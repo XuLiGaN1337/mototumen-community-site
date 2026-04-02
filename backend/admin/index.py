@@ -87,6 +87,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         query_params = event.get('queryStringParameters', {}) or {}
         action = query_params.get('action', 'users')
 
+        # Публичный эндпоинт — категории фильтров (без токена)
+        if method == 'GET' and action == 'filter-categories':
+            section = query_params.get('section')
+            q = f"SELECT id, section, label, sort_order FROM {SCHEMA}.filter_categories"
+            if section:
+                q += f" WHERE section = '{section.replace(chr(39), chr(39)*2)}'"
+            q += " ORDER BY section, sort_order"
+            cur.execute(q)
+            rows = cur.fetchall()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps([dict(r) for r in rows], default=str), 'isBase64Encoded': False}
+
         # Публичный эндпоинт — организация по id (без токена)
         if method == 'GET' and action == 'organization':
             org_id = query_params.get('id')
@@ -1300,6 +1311,35 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
+        # ===== FILTER CATEGORIES =====
+        # POST: добавить категорию
+        if method == 'POST' and action == 'filter-categories':
+            if user['role'] not in ['ceo', 'admin']:
+                return {'statusCode': 403, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Недостаточно прав'}), 'isBase64Encoded': False}
+            body = json.loads(event.get('body', '{}'))
+            section = body.get('section', '').strip()
+            label = body.get('label', '').strip()
+            if not section or not label:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'section и label обязательны'}), 'isBase64Encoded': False}
+            cur.execute(f"SELECT COALESCE(MAX(sort_order), 0) + 1 as next_order FROM {SCHEMA}.filter_categories WHERE section = %s", (section,))
+            next_order = cur.fetchone()['next_order']
+            cur.execute(f"INSERT INTO {SCHEMA}.filter_categories (section, label, sort_order) VALUES (%s, %s, %s) RETURNING id", (section, label, next_order))
+            new_id = cur.fetchone()['id']
+            conn.commit()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True, 'id': new_id}), 'isBase64Encoded': False}
+
+        # DELETE: удалить категорию
+        if method == 'DELETE' and action == 'filter-categories':
+            if user['role'] not in ['ceo', 'admin']:
+                return {'statusCode': 403, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Недостаточно прав'}), 'isBase64Encoded': False}
+            body = json.loads(event.get('body', '{}'))
+            cat_id = body.get('id')
+            if not cat_id:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id обязателен'}), 'isBase64Encoded': False}
+            cur.execute(f"DELETE FROM {SCHEMA}.filter_categories WHERE id = %s", (cat_id,))
+            conn.commit()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
+
         return {
             'statusCode': 400,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},

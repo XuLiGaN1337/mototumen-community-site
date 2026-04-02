@@ -12,6 +12,7 @@ import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
+import { useFilterCategories } from "@/hooks/useFilterCategories";
 
 interface Announcement {
   id?: number;
@@ -30,8 +31,7 @@ interface Announcement {
 
 const API_URL = "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388";
 
-const categories = ["Продажа", "Покупка", "Попутчики", "Услуги", "Обучение", "Эвакуатор", "Общее"];
-const filterCategories = ["Все", ...categories];
+const FALLBACK_CATEGORIES = ["Продажа", "Покупка", "Попутчики", "Услуги", "Обучение", "Эвакуатор", "Общее"];
 
 const emptyForm = () => ({
   title: "",
@@ -53,6 +53,8 @@ const Announcements: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("Все");
   const { isAuthenticated, token, user } = useAuth();
   const { toast } = useToast();
+  const categories = useFilterCategories("announcements", FALLBACK_CATEGORIES);
+  const filterCategories = ["Все", ...categories];
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
