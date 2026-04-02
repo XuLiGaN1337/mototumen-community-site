@@ -206,6 +206,16 @@ const Header: React.FC<HeaderProps> = () => {
                       <Icon name="User" className="h-4 w-4 mr-2" />
                       Профиль
                     </button>
+                    <button
+                      onClick={() => {
+                        navigate('/settings');
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors flex items-center border-b border-dark-600"
+                    >
+                      <Icon name="Settings" className="h-4 w-4 mr-2" />
+                      Настройки
+                    </button>
                     
                     {isAdmin && (
                       <button
@@ -341,7 +351,10 @@ const Header: React.FC<HeaderProps> = () => {
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-white font-medium truncate">{user?.name}</p>
-                      <a href="/profile" className="text-sm text-[#004488] hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Открыть профиль</a>
+                      <div className="flex gap-3">
+                        <a href="/profile" className="text-sm text-[#004488] hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Профиль</a>
+                        <a href="/settings" className="text-sm text-gray-400 hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Настройки</a>
+                      </div>
                     </div>
                     <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg">
                       <Icon name="LogOut" className="h-5 w-5" />
