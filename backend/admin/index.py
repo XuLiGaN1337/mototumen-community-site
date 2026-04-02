@@ -242,6 +242,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
+        # Long poll — ждём одобрения сброса пароля (до 20 сек)
+        if method == 'GET' and action == 'wait-password-reset':
+            import time
+            deadline = time.time() + 20
+            while time.time() < deadline:
+                cur.execute(
+                    f"SELECT status FROM {SCHEMA}.password_reset_requests WHERE user_id = %s ORDER BY created_at DESC LIMIT 1",
+                    (user['id'],)
+                )
+                row = cur.fetchone()
+                if row and row['status'] == 'approved':
+                    return {
+                        'statusCode': 200,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'approved': True}),
+                        'isBase64Encoded': False
+                    }
+                time.sleep(1)
+                conn = get_db_connection()
+                cur = conn.cursor()
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps({'approved': False}),
+                'isBase64Encoded': False
+            }
+
         # Запрос на сброс СВОЕГО пароля (админ забыл пароль)
         if method == 'POST' and action == 'request-password-reset':
             cur.execute(

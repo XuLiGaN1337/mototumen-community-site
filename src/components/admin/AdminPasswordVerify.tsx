@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Icon from '@/components/ui/icon';
@@ -65,26 +65,33 @@ export const AdminPasswordVerify: React.FC<AdminPasswordVerifyProps> = ({
     finally { setResetLoading(false); }
   };
 
-  // Поллинг статуса запроса — пока ждём одобрения CEO
-  const checkResetStatus = useCallback(async () => {
-    if (screen !== 'requested') return;
-    try {
-      const res = await fetch(`${adminApi}?action=my-admin-password-status`, {
-        headers: { 'X-Auth-Token': token }
-      });
-      const data = await res.json();
-      // Если пароль сброшен (hash = null) — показываем форму установки нового
-      if (res.ok && data.hasPassword === false) {
-        setScreen('setup');
-      }
-    } catch { /* silent */ }
-  }, [screen, adminApi, token]);
-
+  // Long polling — один запрос висит 20 сек, при одобрении сразу переходим
   useEffect(() => {
     if (screen !== 'requested') return;
-    const interval = setInterval(checkResetStatus, 5000);
-    return () => clearInterval(interval);
-  }, [screen, checkResetStatus]);
+    let cancelled = false;
+
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const res = await fetch(`${adminApi}?action=wait-password-reset`, {
+            headers: { 'X-Auth-Token': token },
+          });
+          if (cancelled) return;
+          const data = await res.json();
+          if (res.ok && data.approved) {
+            setScreen('setup');
+            return;
+          }
+        } catch {
+          if (cancelled) return;
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      }
+    };
+
+    poll();
+    return () => { cancelled = true; };
+  }, [screen, adminApi, token]);
 
   const handleSetNewPassword = async () => {
     if (newPassword.length < 6) { setError('Минимум 6 символов'); return; }
@@ -172,7 +179,7 @@ export const AdminPasswordVerify: React.FC<AdminPasswordVerifyProps> = ({
           </div>
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
-            Проверяем каждые 5 секунд...
+            Страница обновится мгновенно после одобрения
           </div>
           <Button variant="outline" onClick={() => setScreen('verify')} className="w-full">
             <Icon name="ArrowLeft" className="w-4 h-4 mr-2" />
