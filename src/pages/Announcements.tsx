@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { useFilterCategories } from "@/hooks/useFilterCategories";
+import { useUserProfileModal } from "@/hooks/useUserProfileModal";
 
 interface Announcement {
   id?: number;
@@ -53,6 +54,7 @@ const Announcements: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("Все");
   const { isAuthenticated, token, user } = useAuth();
   const { toast } = useToast();
+  const { open: openProfile, modal: profileModal } = useUserProfileModal();
   const categories = useFilterCategories("announcements", FALLBACK_CATEGORIES);
   const filterCategories = ["Все", ...categories];
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -324,7 +326,16 @@ const Announcements: React.FC = () => {
                         )}
                         <div className="flex items-center gap-2">
                           <Icon name="User" className="h-4 w-4 text-zinc-400 flex-shrink-0" />
-                          <span className="text-zinc-300">{ann.author}</span>
+                          {ann.user_id ? (
+                            <button
+                              onClick={() => openProfile(ann.user_id!)}
+                              className="text-zinc-300 hover:text-accent transition-colors text-sm"
+                            >
+                              {ann.author}
+                            </button>
+                          ) : (
+                            <span className="text-zinc-300">{ann.author}</span>
+                          )}
                         </div>
                         {ann.location && (
                           <div className="flex items-center gap-2">
@@ -461,6 +472,7 @@ const Announcements: React.FC = () => {
         onClose={() => setShowAuthModal(false)}
         message="Войдите, чтобы публиковать объявления и видеть контакты"
       />
+      {profileModal}
     </PageLayout>
   );
 };

@@ -220,7 +220,74 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     headers = event.get('headers', {})
     token = get_header(headers, 'X-Auth-Token')
     query_params = event.get('queryStringParameters') or {}
-    
+
+    SCHEMA = 't_p21120869_mototumen_community_'
+
+    # === ПУБЛИЧНЫЙ ПРОФИЛЬ по id или custom_id ===
+    if method == 'GET' and query_params.get('action') == 'public-profile':
+        conn = get_db_connection()
+        cur = conn.cursor()
+        uid = query_params.get('id', '').strip()
+        if not uid:
+            return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id required'}), 'isBase64Encoded': False}
+        # Пробуем по custom_id, потом по числовому id
+        uid_esc = uid.replace("'", "''")
+        cur.execute(f"""
+            SELECT u.id, u.name, u.role, u.is_organization, u.custom_id, u.created_at,
+                   u.username as telegram_username,
+                   p.avatar_url, p.bio, p.location, p.callsign, p.gender
+            FROM {SCHEMA}.users u
+            LEFT JOIN {SCHEMA}.user_profiles p ON u.id = p.user_id
+            WHERE u.custom_id = '{uid_esc}' OR u.id::text = '{uid_esc}'
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+        if not row:
+            return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Пользователь не найден'}), 'isBase64Encoded': False}
+        profile = dict(row)
+        # Организация
+        cur.execute(f"SELECT id, name, category FROM {SCHEMA}.organizations WHERE user_id = {profile['id']} AND is_active = true LIMIT 1")
+        org = cur.fetchone()
+        profile['organization'] = dict(org) if org else None
+        # Гараж
+        cur.execute(f"SELECT id, brand, model, year FROM {SCHEMA}.user_vehicles WHERE user_id = {profile['id']} ORDER BY created_at DESC LIMIT 5")
+        profile['vehicles'] = [dict(v) for v in cur.fetchall()]
+        cur.close(); conn.close()
+        return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps(profile, default=str), 'isBase64Encoded': False}
+
+    # === УСТАНОВКА custom_id (только 1 раз, только авторизованный) ===
+    if method == 'PUT' and query_params.get('action') == 'set-custom-id':
+        if not token:
+            return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Auth required'}), 'isBase64Encoded': False}
+        conn = get_db_connection()
+        cur = conn.cursor()
+        auth_user = get_user_from_token(cur, token)
+        if not auth_user:
+            cur.close(); conn.close()
+            return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Invalid token'}), 'isBase64Encoded': False}
+        # Проверяем что custom_id ещё не установлен
+        cur.execute(f"SELECT custom_id FROM {SCHEMA}.users WHERE id = {auth_user['id']}")
+        existing = cur.fetchone()
+        if existing and existing['custom_id']:
+            cur.close(); conn.close()
+            return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'ID уже установлен и не может быть изменён'}), 'isBase64Encoded': False}
+        body = json.loads(event.get('body', '{}'))
+        custom_id = body.get('custom_id', '').strip()
+        import re
+        if not custom_id or not re.match(r'^[a-zA-Z0-9_]{3,32}$', custom_id):
+            cur.close(); conn.close()
+            return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'ID: 3–32 символа, только латиница, цифры и _'}), 'isBase64Encoded': False}
+        # Проверяем уникальность
+        cid_esc = custom_id.replace("'", "''")
+        cur.execute(f"SELECT id FROM {SCHEMA}.users WHERE custom_id = '{cid_esc}'")
+        if cur.fetchone():
+            cur.close(); conn.close()
+            return {'statusCode': 409, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Этот ID уже занят'}), 'isBase64Encoded': False}
+        cur.execute(f"UPDATE {SCHEMA}.users SET custom_id = '{cid_esc}' WHERE id = {auth_user['id']}")
+        conn.commit()
+        cur.close(); conn.close()
+        return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True, 'custom_id': custom_id}), 'isBase64Encoded': False}
+
     # DEBUG: Check channel info
     if method == 'GET' and query_params.get('debug') == 'channel':
         bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH')
@@ -1257,7 +1324,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Auth required'}), 'isBase64Encoded': False}
             
             if method == 'GET':
-                cur.execute(f"SELECT u.id, u.email, u.name, u.role, u.is_organization, u.created_at, u.telegram_id, u.username as telegram_username, p.phone, p.avatar_url, p.bio, p.location, p.gender, p.callsign, p.telegram FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE u.id = {user['id']}")
+                cur.execute(f"SELECT u.id, u.email, u.name, u.role, u.is_organization, u.custom_id, u.created_at, u.telegram_id, u.username as telegram_username, p.phone, p.avatar_url, p.bio, p.location, p.gender, p.callsign, p.telegram FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE u.id = {user['id']}")
                 profile = cur.fetchone()
 
                 cur.execute(f"SELECT id, name, category, type FROM t_p21120869_mototumen_community_.organizations WHERE user_id = {user['id']} AND is_active = true LIMIT 1")

@@ -15,6 +15,7 @@ import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { PhotoGallery } from "@/components/profile/PhotoGallery";
 import LinkedAccounts from "@/components/profile/LinkedAccounts";
+import CustomIdBlock from "@/components/profile/CustomIdBlock";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
@@ -321,6 +322,15 @@ const Profile = () => {
                   organization={profileData?.organization}
                 />
                 
+                {token && user && (
+                  <CustomIdBlock
+                    currentCustomId={profileData?.profile?.custom_id || null}
+                    numericId={user.id}
+                    token={token}
+                    onSaved={(id) => setProfileData((prev: { profile: Record<string, unknown> } | null) => prev ? { ...prev, profile: { ...prev.profile, custom_id: id } } : prev)}
+                  />
+                )}
+
                 <FavoritesSection favorites={favorites} />
 
                 <PhotoGallery

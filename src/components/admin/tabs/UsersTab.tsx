@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useUserProfileModal } from "@/hooks/useUserProfileModal";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ export const UsersTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { token } = useAuth();
   const { toast } = useToast();
+  const { open: openProfile, modal: profileModal } = useUserProfileModal();
 
   useEffect(() => {
     if (token) {
@@ -196,7 +198,12 @@ export const UsersTab: React.FC = () => {
                     </span>
                   </div>
                   <div>
-                    <h4 className="text-white font-semibold">{user.name}</h4>
+                    <button
+                      onClick={() => openProfile(user.id)}
+                      className="text-white font-semibold hover:text-accent transition-colors"
+                    >
+                      {user.name}
+                    </button>
                     <p className="text-sm text-zinc-400">{user.email}</p>
                   </div>
                 </div>
@@ -280,6 +287,7 @@ export const UsersTab: React.FC = () => {
           <p className="text-zinc-400">Пользователи не найдены</p>
         </div>
       )}
+      {profileModal}
     </div>
   );
 };
