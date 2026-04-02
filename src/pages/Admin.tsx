@@ -232,7 +232,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 gap-1 bg-background mb-8">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-7 gap-1 bg-background mb-8">
             <TabsTrigger value="dashboard" className="flex flex-col gap-0.5 h-auto py-2">
               <span className="text-lg leading-none">📊</span>
               <span className="text-[10px] md:text-xs leading-tight">Дашборд</span>
@@ -261,7 +261,7 @@ const Admin = () => {
               <span className="text-lg leading-none">🍁</span>
               <span className="text-[10px] md:text-xs leading-tight">Сезоны</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex flex-col gap-0.5 h-auto py-2">
+            <TabsTrigger value="settings" onClick={() => navigate('/settings')} className="flex flex-col gap-0.5 h-auto py-2">
               <span className="text-lg leading-none">⚙️</span>
               <span className="text-[10px] md:text-xs leading-tight">Настройки</span>
             </TabsTrigger>

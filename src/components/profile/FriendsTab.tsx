@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNotification } from "@/contexts/NotificationContext";
 import { Link } from "react-router-dom";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
@@ -31,6 +32,8 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ userId, readonly = false
   const [searchTerm, setSearchTerm] = useState("");
   const { token } = useAuth();
   const { toast } = useToast();
+  const { notify } = useNotification();
+  const prevPendingCount = React.useRef(0);
 
   useEffect(() => {
     if (token) {
@@ -52,6 +55,11 @@ export const FriendsTab: React.FC<FriendsTabProps> = ({ userId, readonly = false
 
       if (response.ok) {
         const data = await response.json();
+        const incoming = (data.friends || []).filter((f: Friend) => f.status === 'pending' && f.direction === 'received');
+        if (incoming.length > prevPendingCount.current) {
+          notify('friend', 'Новая заявка в друзья', `${incoming[0]?.name} хочет добавить вас в друзья`);
+        }
+        prevPendingCount.current = incoming.length;
         setFriends(data.friends || []);
       }
     } catch (error) {
