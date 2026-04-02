@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import GaragePickerModal from "@/components/GaragePickerModal";
 
 const Help = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -81,6 +82,7 @@ const Help = () => {
   };
 
   const [isSending, setIsSending] = useState(false);
+  const [showGaragePicker, setShowGaragePicker] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,11 +182,33 @@ const Help = () => {
             </div>
           </div>
 
+          <GaragePickerModal
+            open={showGaragePicker}
+            onClose={() => setShowGaragePicker(false)}
+            onSelect={v => setFormData(prev => ({
+              ...prev,
+              motoModel: `${v.brand} ${v.model}`.trim(),
+              motoYear: v.year ? String(v.year) : prev.motoYear,
+            }))}
+          />
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="bg-card rounded-xl p-6 border-2 border-orange/30 shadow-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <Icon name="Bike" className="w-6 h-6 text-orange" />
-                <h2 className="text-xl font-bold">Данные мотоцикла</h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Icon name="Bike" className="w-6 h-6 text-orange" />
+                  <h2 className="text-xl font-bold">Данные мотоцикла</h2>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowGaragePicker(true)}
+                  className="text-xs border-[#ff6b35]/40 text-[#ff6b35] hover:bg-[#ff6b35]/10"
+                >
+                  <Icon name="Bike" className="h-3.5 w-3.5 mr-1.5" />
+                  Из гаража
+                </Button>
               </div>
               
               <div className="space-y-4">
