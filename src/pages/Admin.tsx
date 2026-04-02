@@ -33,21 +33,22 @@ const Admin = () => {
     const checkPassword = async () => {
       if (!token) return;
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
         const res = await fetch(`${ADMIN_API}?action=my-admin-password-status`, {
-          headers: { 'X-Auth-Token': token }
+          headers: { 'X-Auth-Token': token },
+          signal: controller.signal,
         });
-        console.log('[ADMIN] password-status response:', res.status);
+        clearTimeout(timeout);
         const data = await res.json();
-        console.log('[ADMIN] password-status data:', data);
         if (res.ok) {
           setHasPassword(data.hasPassword);
         } else {
-          console.error('[ADMIN] password-status error:', data);
-          // не меняем состояние — оставляем null (loader) чтобы не показывать форму установки при ошибке
+          setHasPassword(false);
         }
       } catch (error) {
         console.error('[ADMIN] Failed to check password status:', error);
-        // не меняем на false — оставляем null
+        setHasPassword(false);
       }
     };
     checkPassword();

@@ -103,10 +103,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         user = get_user_from_token(cur, token)
         
         if not user:
-            ip = event.get('requestContext', {}).get('identity', {}).get('sourceIp', 'unknown')
-            log_security_event(cur, 'invalid_token', 'medium', ip=ip, 
-                             endpoint='/admin', method=method)
-            conn.commit()
             return {
                 'statusCode': 401,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -115,11 +111,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         if user['role'] not in ['admin', 'ceo', 'moderator']:
-            ip = event.get('requestContext', {}).get('identity', {}).get('sourceIp', 'unknown')
-            log_security_event(cur, 'unauthorized_access', 'high', ip=ip, 
-                             user_id=user['id'], endpoint='/admin', method=method,
-                             details={'role': user['role']})
-            conn.commit()
             return {
                 'statusCode': 403,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
