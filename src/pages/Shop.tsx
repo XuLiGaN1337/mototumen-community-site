@@ -5,7 +5,7 @@ import ShopPageFilters from "@/components/shop/ShopPageFilters";
 import ShopList from "@/components/shop/ShopList";
 import { ShopData } from "@/components/shop/types";
 
-const API_URL = "https://functions.poehali.dev/5b8dbbf1-556a-43c8-b39c-e8096eebd5d4";
+const API_URL = "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388";
 
 const Shop = () => {
   const [searchTerm, setSearchTerm] = useState("");

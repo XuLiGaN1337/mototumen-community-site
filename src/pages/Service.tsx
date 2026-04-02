@@ -5,7 +5,7 @@ import ServicePageFilters from "@/components/services/ServicePageFilters";
 import ServiceList from "@/components/services/ServiceList";
 import { ServiceData } from "@/components/services/types";
 
-const API_URL = "https://functions.poehali.dev/5b8dbbf1-556a-43c8-b39c-e8096eebd5d4";
+const API_URL = "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388";
 
 const Service = () => {
   const [searchTerm, setSearchTerm] = useState("");
