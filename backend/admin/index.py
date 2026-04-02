@@ -953,6 +953,33 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         # Создание заявки на организацию (POST)
+        # Обновление организации пользователем
+        if method == 'PUT' and action == 'update-organization':
+            body = json.loads(event.get('body', '{}'))
+            org_id = body.get('id')
+            if not org_id:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id обязателен'}), 'isBase64Encoded': False}
+            cur.execute(f"SELECT id FROM {SCHEMA}.organizations WHERE id = {org_id} AND user_id = {user['id']}")
+            if not cur.fetchone():
+                return {'statusCode': 403, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Нет прав'}), 'isBase64Encoded': False}
+            name = body.get('organization_name', '')
+            org_type = body.get('organization_type', '')
+            description = body.get('description', '')
+            address = body.get('address', '')
+            phone = body.get('phone', '')
+            email = body.get('email', '')
+            website = body.get('website', '')
+            working_hours = body.get('working_hours', '')
+            cur.execute(
+                f"""UPDATE {SCHEMA}.organizations
+                    SET name=%s, type=%s, description=%s, address=%s, phone=%s,
+                        email=%s, website=%s, working_hours=%s, is_active=false, updated_at=CURRENT_TIMESTAMP
+                    WHERE id=%s AND user_id=%s""",
+                (name, org_type, description, address, phone, email, website, working_hours, org_id, user['id'])
+            )
+            conn.commit()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
+
         if method == 'POST' and action == 'organization-request':
             body = json.loads(event.get('body', '{}'))
             org_name = body.get('organization_name', '')
@@ -1145,7 +1172,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cur.execute(
                     f"""UPDATE {SCHEMA}.shops
                         SET name=%s, description=%s, category=%s, address=%s, phone=%s,
-                            email=%s, website=%s, working_hours=%s, image=%s, is_open=%s,
+                            email=%s, website=%s, working_hours=%s, image_url=%s, is_open=%s,
                             updated_at=CURRENT_TIMESTAMP
                         WHERE id=%s AND organization_id=%s""",
                     (name, description, category, address, phone, email, website,
@@ -1155,7 +1182,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cur.execute(
                     f"""INSERT INTO {SCHEMA}.shops
                         (organization_id, name, description, category, address, phone,
-                         email, website, working_hours, image, is_open)
+                         email, website, working_hours, image_url, is_open)
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                         RETURNING id""",
                     (org_id, name, description, category, address, phone,
