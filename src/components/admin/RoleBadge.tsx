@@ -18,6 +18,7 @@ const ROLE_CONFIG = {
   ceo: { emoji: " 👑", label: "CEO" },
   admin: { emoji: " ⚡", label: "Админ" },
   moderator: { emoji: " 🛡️", label: "Модератор" },
+  organization: { emoji: " 🏢", label: "Организация" },
   user: { emoji: "", label: "Пользователь" }
 };
 

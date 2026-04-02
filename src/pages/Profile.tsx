@@ -318,6 +318,7 @@ const Profile = () => {
                   onLogout={logout}
                   onAvatarChange={handleAvatarChange}
                   getDefaultAvatar={getDefaultAvatar}
+                  organization={profileData?.organization}
                 />
                 
                 <FavoritesSection favorites={favorites} />

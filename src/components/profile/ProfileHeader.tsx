@@ -15,6 +15,7 @@ interface ProfileHeaderProps {
   onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAvatar?: () => void;
   getDefaultAvatar: (gender: string) => string;
+  organization?: { id: number; name: string; category: string; type: string } | null;
 }
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -28,6 +29,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onAvatarChange,
   onRemoveAvatar,
   getDefaultAvatar,
+  organization,
 }) => {
   const hasCustomAvatar = user.avatar_url && user.avatar_url.startsWith('http');
   return (
@@ -83,10 +85,21 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           </p>
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 truncate">
             {user.name}
-            {profileData?.profile?.roles?.map((roleObj: any) => (
+            {profileData?.profile?.roles?.map((roleObj: { role: string }) => (
               <span key={roleObj.role} className="ml-2 text-xl">{getRoleEmoji(roleObj.role)}</span>
             ))}
+            {user.role && getRoleEmoji(user.role) && (
+              <span className="ml-2 text-xl">{getRoleEmoji(user.role)}</span>
+            )}
           </h1>
+          {organization && (
+            <div className="mb-2">
+              <Badge className="bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs gap-1">
+                <Icon name="Building2" size={11} />
+                {organization.name}
+              </Badge>
+            </div>
+          )}
 
           {editForm.callsign && (
             <div className="mb-3">

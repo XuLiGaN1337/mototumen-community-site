@@ -1257,9 +1257,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Auth required'}), 'isBase64Encoded': False}
             
             if method == 'GET':
-                cur.execute(f"SELECT u.id, u.email, u.name, u.created_at, u.telegram_id, u.username as telegram_username, p.phone, p.avatar_url, p.bio, p.location, p.gender, p.callsign, p.telegram FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE u.id = {user['id']}")
+                cur.execute(f"SELECT u.id, u.email, u.name, u.role, u.created_at, u.telegram_id, u.username as telegram_username, p.phone, p.avatar_url, p.bio, p.location, p.gender, p.callsign, p.telegram FROM users u LEFT JOIN user_profiles p ON u.id = p.user_id WHERE u.id = {user['id']}")
                 profile = cur.fetchone()
-                
+
+                cur.execute(f"SELECT id, name, category, type FROM t_p21120869_mototumen_community_.organizations WHERE user_id = {user['id']} AND is_active = true LIMIT 1")
+                org_row = cur.fetchone()
+                user_organization = dict(org_row) if org_row else None
+
                 cur.execute(f"SELECT item_type, item_id, created_at FROM user_favorites WHERE user_id = {user['id']} ORDER BY created_at DESC")
                 favorites = cur.fetchall()
                 
@@ -1294,7 +1298,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 cur.execute(f"SELECT id, photo_url, source, created_at FROM user_photos WHERE user_id = {user['id']} ORDER BY created_at DESC")
                 photos = cur.fetchall()
                 
-                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'profile': dict(profile) if profile else {}, 'favorites': [dict(f) for f in favorites], 'pending_friend_requests': pending_count, 'friends_count': friends_count, 'vehicles_count': vehicles_count, 'favorites_count': favorites_count, 'achievements_count': achievements_count, 'total_achievements': total_achievements, 'badges_count': badges_count, 'photos': [dict(p) for p in photos]}, default=str), 'isBase64Encoded': False}
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'profile': dict(profile) if profile else {}, 'organization': user_organization, 'favorites': [dict(f) for f in favorites], 'pending_friend_requests': pending_count, 'friends_count': friends_count, 'vehicles_count': vehicles_count, 'favorites_count': favorites_count, 'achievements_count': achievements_count, 'total_achievements': total_achievements, 'badges_count': badges_count, 'photos': [dict(p) for p in photos]}, default=str), 'isBase64Encoded': False}
             
             elif method == 'PUT':
                 body = json.loads(event.get('body', '{}'))
