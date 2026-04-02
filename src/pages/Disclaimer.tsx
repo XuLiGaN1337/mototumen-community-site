@@ -1,38 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
-import ReactMarkdown from 'react-markdown';
 
 const Disclaimer: React.FC = () => {
   const navigate = useNavigate();
-  const [content, setContent] = useState('');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('legal_documents');
-    if (saved) {
-      const docs = JSON.parse(saved);
-      const disclaimerDoc = docs.find((d: any) => d.id === 'disclaimer');
-      if (disclaimerDoc) {
-        setContent(disclaimerDoc.content);
-      }
-    }
-  }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-zinc-900 text-foreground">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-zinc-400 hover:text-white">
           <Icon name="ArrowLeft" className="h-4 w-4 mr-2" />
           Назад
         </Button>
 
-        <div className="prose prose-lg dark:prose-invert max-w-none">
-          <ReactMarkdown>{content}</ReactMarkdown>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2 font-['Oswald']">Отказ от ответственности</h1>
+            <p className="text-zinc-500 text-sm">Последнее обновление: апрель 2026 г.</p>
+          </div>
+
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 flex gap-3">
+            <Icon name="AlertTriangle" size={20} className="text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-amber-200 text-sm leading-relaxed">
+              Внимательно прочитайте данный раздел. Используя платформу МОТОТюмень, вы подтверждаете, что ознакомлены с настоящим Отказом от ответственности и принимаете его условия.
+            </p>
+          </div>
+
+          {[
+            {
+              title: "1. Информационный характер платформы",
+              text: `Платформа МОТОТюмень носит информационный и коммуникационный характер. Размещённые на платформе материалы (описания организаций, товаров, услуг, объявления) предоставляются пользователями и организациями.
+
+Администрация не гарантирует актуальность, полноту и достоверность информации, размещённой третьими лицами.`,
+            },
+            {
+              title: "2. Сделки между пользователями",
+              text: `Платформа является площадкой для коммуникации между участниками сообщества. Администрация не является стороной в сделках купли-продажи, оказания услуг и иных соглашениях, заключаемых пользователями на основе информации с платформы.
+
+Все финансовые и иные договорённости пользователи заключают на свой страх и риск. Администрация не несёт ответственности за ненадлежащее исполнение обязательств сторонами сделок.`,
+            },
+            {
+              title: "3. Качество товаров и услуг",
+              text: `Администрация не проверяет и не несёт ответственности за качество товаров, работ и услуг, предлагаемых организациями, зарегистрированными на платформе. Все претензии по качеству предъявляйте непосредственно поставщику товара или услуги.`,
+            },
+            {
+              title: "4. Безопасность при езде на мотоцикле",
+              text: `Мотоцикл является транспортным средством повышенной опасности. Администрация настоятельно рекомендует:
+— Использовать сертифицированную защитную экипировку
+— Соблюдать ПДД и скоростной режим
+— Не управлять мотоциклом в состоянии алкогольного или иного опьянения
+— Проходить техническое обслуживание в срок
+
+Платформа не несёт ответственности за ущерб здоровью, жизни или имуществу, возникший в результате использования мотоцикла.`,
+            },
+            {
+              title: "5. Доступность платформы",
+              text: `Администрация стремится обеспечить бесперебойную работу платформы, однако не гарантирует её непрерывную доступность. Технические работы, сбои и иные перерывы в работе не являются основанием для предъявления претензий.`,
+            },
+            {
+              title: "6. Ссылки на сторонние ресурсы",
+              text: `Платформа может содержать ссылки на сторонние сайты. Администрация не контролирует содержимое сторонних ресурсов и не несёт ответственности за их содержание, политику конфиденциальности или действия.`,
+            },
+            {
+              title: "7. Ограничение ответственности",
+              text: `В максимально допустимой законодательством мере администрация платформы не несёт ответственности за любые прямые, косвенные, случайные, специальные или штрафные убытки, возникшие в результате использования или невозможности использования платформы.`,
+            },
+            {
+              title: "8. Применимое право",
+              text: `Настоящий Отказ от ответственности регулируется законодательством Российской Федерации. Все споры рассматриваются в судах Российской Федерации по месту нахождения администрации платформы.`,
+            },
+          ].map(({ title, text }) => (
+            <section key={title} className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-white mb-3">{title}</h2>
+              <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-line">{text}</p>
+            </section>
+          ))}
         </div>
       </div>
     </div>

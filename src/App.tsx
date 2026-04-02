@@ -33,6 +33,7 @@ import OrganizationPage from "./pages/OrganizationPage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Disclaimer from "./pages/Disclaimer";
+import Docs from "./pages/Docs";
 import Emergency from "./pages/Emergency";
 import Help from "./pages/Help";
 import StorePage from "./pages/StorePage";
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/disclaimer" element={<Disclaimer />} />
+            <Route path="/docs" element={<Docs />} />
             <Route path="/emergency" element={<Emergency />} />
             <Route path="/help" element={<Help />} />
             <Route path="/zm-store" element={<ZMStoreDashboard />} />

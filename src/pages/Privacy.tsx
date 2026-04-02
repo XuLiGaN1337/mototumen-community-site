@@ -1,38 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
-import ReactMarkdown from 'react-markdown';
 
 const Privacy: React.FC = () => {
   const navigate = useNavigate();
-  const [content, setContent] = useState('');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('legal_documents');
-    if (saved) {
-      const docs = JSON.parse(saved);
-      const privacyDoc = docs.find((d: any) => d.id === 'privacy');
-      if (privacyDoc) {
-        setContent(privacyDoc.content);
-      }
-    }
-  }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-zinc-900 text-foreground">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 text-zinc-400 hover:text-white">
           <Icon name="ArrowLeft" className="h-4 w-4 mr-2" />
           Назад
         </Button>
 
-        <div className="prose prose-lg dark:prose-invert max-w-none">
-          <ReactMarkdown>{content}</ReactMarkdown>
+        <div className="prose prose-invert max-w-none space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2 font-['Oswald']">Политика конфиденциальности</h1>
+            <p className="text-zinc-500 text-sm">Последнее обновление: апрель 2026 г.</p>
+          </div>
+
+          {[
+            {
+              title: "1. Общие положения",
+              text: `Настоящая Политика конфиденциальности определяет порядок сбора, хранения и использования персональных данных пользователей платформы МОТОТюмень (mototyumen.ru).
+
+Используя платформу, вы соглашаетесь с условиями настоящей Политики. Если вы не согласны — пожалуйста, не используйте сервис.`,
+            },
+            {
+              title: "2. Какие данные мы собираем",
+              text: `При регистрации и использовании платформы мы можем собирать:
+— Имя, email-адрес, номер телефона (по желанию)
+— Telegram ID и юзернейм при авторизации через Telegram
+— Данные профиля: аватар, позывной, город, информация о мотоцикле
+— Технические данные: IP-адрес, браузер, операционная система — в целях обеспечения безопасности`,
+            },
+            {
+              title: "3. Как мы используем данные",
+              text: `Собранные данные используются исключительно для:
+— Идентификации пользователей на платформе
+— Отображения профиля в сообществе
+— Обеспечения работы функций (гараж, друзья, объявления, организации)
+— Связи с пользователем по вопросам работы платформы
+— Обеспечения безопасности и предотвращения злоупотреблений`,
+            },
+            {
+              title: "4. Передача данных третьим лицам",
+              text: `Мы не продаём, не сдаём в аренду и не передаём ваши персональные данные третьим лицам, за исключением случаев, прямо предусмотренных законодательством Российской Федерации.
+
+Часть данных (имя, аватар, информация о технике) видна другим участникам сообщества в рамках публичного профиля — это необходимо для функционирования сообщества.`,
+            },
+            {
+              title: "5. Хранение данных",
+              text: `Данные хранятся на защищённых серверах. Мы применяем технические и организационные меры для защиты информации от несанкционированного доступа, изменения или удаления.`,
+            },
+            {
+              title: "6. Ваши права",
+              text: `Вы вправе:
+— Запросить доступ к своим данным
+— Исправить неточные данные в разделе «Редактировать профиль»
+— Удалить аккаунт — обратитесь в поддержку через Telegram @MotoTyumen
+— Отозвать согласие на обработку данных`,
+            },
+            {
+              title: "7. Cookies",
+              text: `Платформа использует cookies для поддержания сессии авторизации и корректной работы сервиса. Вы можете отключить cookies в настройках браузера, однако это может ограничить функциональность платформы.`,
+            },
+            {
+              title: "8. Контакты",
+              text: `По вопросам, связанным с персональными данными, обращайтесь: Telegram — @MotoTyumen | Email — info@mototyumen.ru`,
+            },
+          ].map(({ title, text }) => (
+            <section key={title} className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-6">
+              <h2 className="text-lg font-semibold text-white mb-3">{title}</h2>
+              <p className="text-zinc-400 text-sm leading-relaxed whitespace-pre-line">{text}</p>
+            </section>
+          ))}
         </div>
       </div>
     </div>
