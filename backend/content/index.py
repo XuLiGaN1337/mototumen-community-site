@@ -89,38 +89,49 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
+        # Товары/услуги конкретной организации
+        if method == 'GET' and query_params.get('org_id'):
+            org_id = query_params.get('org_id')
+            cur.execute(f"""
+                SELECT s.id, s.name, s.description, s.category, s.image, s.image_url,
+                       s.price, s.phone, s.address, s.working_hours, s.website,
+                       s.rating, s.created_at
+                FROM shops s
+                WHERE s.organization_id = {org_id}
+                  AND (s.is_archived IS NULL OR s.is_archived = false)
+                ORDER BY s.created_at DESC
+            """)
+            items = cur.fetchall()
+            return {
+                'statusCode': 200,
+                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                'body': json.dumps([dict(r) for r in items], default=str),
+                'isBase64Encoded': False
+            }
+
         if method == 'GET':
             category = query_params.get('category')
             search = query_params.get('search')
             
-            # shops / services / schools — все из таблицы shops, различаются фильтром по категории
-            SHOP_CATS    = ("'Магазин'")
-            SERVICE_CATS = ("'Сервис'")
-            SCHOOL_CATS  = ("'Мотошкола'")
+            # shops / services / schools — список организаций из таблицы organizations
+            CAT_MAP = {'shops': 'Магазин', 'services': 'Сервис', 'schools': 'Мотошкола'}
 
             if content_type in ('shops', 'services', 'schools'):
-                base = """
-                    SELECT id, name, description, category, image, rating,
-                           address, phone, website, organization_id,
-                           is_open, working_hours, latitude, longitude, email, created_at
-                    FROM shops WHERE 1=1
+                cat_filter = CAT_MAP[content_type]
+                base = f"""
+                    SELECT o.id, o.name, o.description, o.category,
+                           o.address, o.phone, o.email, o.website,
+                           o.working_hours, o.rating, o.logo as image,
+                           o.org_request_id, o.created_at
+                    FROM organizations o
+                    WHERE o.is_active = true
+                      AND o.category = '{cat_filter}'
                 """
-                if content_type == 'shops':
-                    base += f" AND category IN ({SHOP_CATS})"
-                elif content_type == 'services':
-                    base += f" AND category IN ({SERVICE_CATS})"
-                elif content_type == 'schools':
-                    base += f" AND category IN ({SCHOOL_CATS})"
-
-                if category and category != 'Все':
-                    escaped_cat = category.replace("'", "''")
-                    base += f" AND category = '{escaped_cat}'"
-
                 if search:
                     escaped_search = search.replace("'", "''")
-                    base += f" AND (name ILIKE '%{escaped_search}%' OR description ILIKE '%{escaped_search}%')"
+                    base += f" AND (o.name ILIKE '%{escaped_search}%' OR o.description ILIKE '%{escaped_search}%')"
 
-                base += " ORDER BY created_at DESC"
+                base += " ORDER BY o.created_at DESC"
                 cur.execute(base)
                 
             elif content_type == 'announcements':

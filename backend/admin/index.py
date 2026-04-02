@@ -685,69 +685,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
-        # Получить МОИ организации (одобренные)
+        # Получить МОИ организации (из таблицы organizations, is_active=true)
         if method == 'GET' and action in ['my-organizations', 'my-organization']:
             cur.execute(f"""
-                SELECT 
-                    or_req.id,
-                    or_req.organization_name,
-                    or_req.organization_type,
-                    or_req.description,
-                    or_req.address,
-                    or_req.phone,
-                    or_req.email,
-                    or_req.website,
-                    or_req.working_hours,
-                    or_req.additional_info,
-                    or_req.status,
-                    or_req.created_at
-                FROM {SCHEMA}.organization_requests or_req
-                WHERE or_req.user_id = {user['id']} AND or_req.status = 'approved'
-                ORDER BY or_req.created_at DESC
-                LIMIT 1
-            """)
-            
-            organization = cur.fetchone()
-            
-            if action == 'my-organization' and organization:
-                cur.execute(f"""
-                    SELECT * FROM {SCHEMA}.shops 
-                    WHERE organization_id = {organization['id']}
-                    ORDER BY created_at DESC
-                """)
-                shops = cur.fetchall()
-                
-                return {
-                    'statusCode': 200,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'organization': organization, 'shops': shops}, default=str),
-                    'isBase64Encoded': False
-                }
-            
-            cur.execute(f"""
-                SELECT 
-                    or_req.id,
-                    or_req.organization_name,
-                    or_req.organization_type,
-                    or_req.description,
-                    or_req.address,
-                    or_req.phone,
-                    or_req.email,
-                    or_req.website,
-                    or_req.working_hours,
-                    or_req.additional_info,
-                    or_req.status,
-                    or_req.created_at
-                FROM {SCHEMA}.organization_requests or_req
-                WHERE or_req.user_id = {user['id']} AND or_req.status = 'approved'
-                ORDER BY or_req.created_at DESC
+                SELECT o.id, o.name as organization_name, o.type as organization_type,
+                       o.category, o.description, o.address, o.phone, o.email,
+                       o.website, o.working_hours, o.is_active as status,
+                       o.logo, o.created_at
+                FROM {SCHEMA}.organizations o
+                WHERE o.user_id = {user['id']} AND o.is_active = true
+                ORDER BY o.created_at DESC
             """)
             organizations = cur.fetchall()
-            
+
             return {
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'organizations': organizations}, default=str),
+                'body': json.dumps({'organizations': [dict(o) for o in organizations]}, default=str),
                 'isBase64Encoded': False
             }
         
@@ -763,7 +717,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 }
             
             cur.execute(
-                f"SELECT id FROM {SCHEMA}.organization_requests WHERE id = {org_id} AND user_id = {user['id']} AND status = 'approved'"
+                f"SELECT id FROM {SCHEMA}.organizations WHERE id = {org_id} AND user_id = {user['id']} AND is_active = true"
             )
             org_check = cur.fetchone()
             
@@ -778,6 +732,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             cur.execute(f"""
                 SELECT * FROM {SCHEMA}.shops 
                 WHERE organization_id = {org_id}
+                  AND (is_archived IS NULL OR is_archived = false)
                 ORDER BY created_at DESC
             """)
             shops = cur.fetchall()
@@ -1111,18 +1066,22 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             )
 
             if status == 'approved':
-                # При одобрении создаём организацию из данных заявки
+                # При одобрении создаём активную организацию из данных заявки
                 cur.execute(
                     f"""
                     INSERT INTO {SCHEMA}.organizations
-                    (user_id, name, type, description, address, phone, email, website, working_hours)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT DO NOTHING
+                    (user_id, name, type, category, description, address, phone, email, website, working_hours, is_active, org_request_id, verified)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, %s, true)
+                    RETURNING id
                     """,
                     (req['user_id'], req['organization_name'], req.get('organization_type', ''),
+                     req.get('organization_type', ''),
                      req.get('description', ''), req.get('address', ''), req.get('phone', ''),
-                     req.get('email', ''), req.get('website', ''), req.get('working_hours', ''))
+                     req.get('email', ''), req.get('website', ''), req.get('working_hours', ''),
+                     req['id'])
                 )
+                new_org = cur.fetchone()
+                print(f"[APPROVE ORG] Created organization id={new_org['id'] if new_org else None} for user={req['user_id']}")
 
             conn.commit()
 
@@ -1159,7 +1118,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
             # Проверяем что организация принадлежит пользователю
             cur.execute(
-                f"SELECT id FROM {SCHEMA}.organization_requests WHERE id = %s AND user_id = %s AND status = 'approved'",
+                f"SELECT id FROM {SCHEMA}.organizations WHERE id = %s AND user_id = %s AND is_active = true",
                 (org_id, user['id'])
             )
             if not cur.fetchone():
@@ -1234,6 +1193,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'body': json.dumps({'success': True}),
                 'isBase64Encoded': False
             }
+
+        # Получить одну организацию по id (публично)
+        if method == 'GET' and action == 'organization':
+            org_id = query_params.get('id')
+            if not org_id:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id required'}), 'isBase64Encoded': False}
+            cur.execute(f"SELECT * FROM {SCHEMA}.organizations WHERE id = {org_id} AND is_active = true")
+            org = cur.fetchone()
+            if not org:
+                return {'statusCode': 404, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Not found'}), 'isBase64Encoded': False}
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'organization': dict(org)}, default=str), 'isBase64Encoded': False}
 
         # Список магазинов
         if method == 'GET' and action == 'shops':

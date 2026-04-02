@@ -47,20 +47,25 @@ export default function OrganizationPage() {
     loadOrganization();
   }, [id]);
 
+  const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
+  const CONTENT_API = 'https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388';
+
   const loadOrganization = async () => {
     try {
       setLoading(true);
-      
-      const orgResponse = await fetch(`https://functions.poehali.dev/5b8dbbf1-556a-43c8-b39c-e8096eebd5d4?type=organization&id=${id}`);
+
+      // Организация из admin API
+      const orgResponse = await fetch(`${ADMIN_API}?action=organization&id=${id}`);
       if (orgResponse.ok) {
         const orgData = await orgResponse.json();
-        setOrganization(orgData);
+        setOrganization(orgData.organization || orgData);
       }
 
-      const itemsResponse = await fetch(`https://functions.poehali.dev/5b8dbbf1-556a-43c8-b39c-e8096eebd5d4?type=organization_items&id=${id}`);
+      // Товары/услуги из content API
+      const itemsResponse = await fetch(`${CONTENT_API}?type=shops&org_id=${id}`);
       if (itemsResponse.ok) {
         const itemsData = await itemsResponse.json();
-        setItems(itemsData);
+        setItems(Array.isArray(itemsData) ? itemsData : []);
       }
     } catch (error) {
       console.error('Failed to load organization:', error);

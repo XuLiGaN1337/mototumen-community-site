@@ -4,6 +4,7 @@ import Icon from "@/components/ui/icon";
 import { ShopData } from "./types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
@@ -30,6 +31,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop, isEditing, onEdit }) => {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const { token, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const iconName = CATEGORY_ICONS[shop.category] || 'Store';
   const colorClass = CATEGORY_COLORS[shop.category] || 'from-orange-500 to-orange-600';
@@ -58,7 +60,10 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop, isEditing, onEdit }) => {
   };
 
   return (
-    <div className="bg-card rounded-xl shadow-sm hover:shadow-md border border-border transition-all duration-300 overflow-hidden group relative">
+    <div
+      className="bg-card rounded-xl shadow-sm hover:shadow-md border border-border transition-all duration-300 overflow-hidden group relative cursor-pointer"
+      onClick={() => !isEditing && navigate(`/organization/${shop.id}`)}
+    >
       {/* Избранное */}
       <div className="absolute top-3 right-3 z-10">
         {!isEditing && (

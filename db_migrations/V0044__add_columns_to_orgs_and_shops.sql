@@ -1,0 +1,10 @@
+ALTER TABLE t_p21120869_mototumen_community_.organizations
+  ADD COLUMN IF NOT EXISTS org_request_id INTEGER,
+  ADD COLUMN IF NOT EXISTS category VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS working_hours VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT false;
+
+ALTER TABLE t_p21120869_mototumen_community_.shops
+  ADD COLUMN IF NOT EXISTS price VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS image_url TEXT,
+  ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false;
