@@ -47,13 +47,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
     body = json.loads(event.get('body') or '{}')
 
-    user_name    = body.get('user_name', 'Не указано')
-    user_phone   = body.get('user_phone', 'Не указан')
-    moto_model   = body.get('moto_model', '')
-    moto_year    = body.get('moto_year', '')
-    moto_plate   = body.get('moto_plate', '')
-    problem      = body.get('problem', '')
-    location     = body.get('location', '')
+    user_name     = body.get('user_name', 'Не указано')
+    user_username = body.get('user_username') or None
+    user_phone    = body.get('user_phone', 'Не указан')
+    moto_model    = body.get('moto_model', '')
+    moto_year     = body.get('moto_year', '')
+    moto_plate    = body.get('moto_plate', '')
+    problem       = body.get('problem', '')
+    location      = body.get('location', '')
 
     if not moto_model or not problem or not location:
         return {'statusCode': 400, 'headers': {**CORS, 'Content-Type': 'application/json'},
@@ -66,9 +67,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     if moto_plate:
         moto_str += f' · {moto_plate}'
 
+    # Имя — гиперссылка если Telegram привязан
+    if user_username:
+        username_clean = user_username.lstrip('@')
+        name_str = f'<a href="https://t.me/{username_clean}">{user_name}</a>'
+    else:
+        name_str = user_name
+
     text = (
         f"🆘 <b>ЗАЯВКА НА ПОМОЩЬ НА ДОРОГЕ</b>\n\n"
-        f"👤 <b>Кто:</b> {user_name}\n"
+        f"👤 <b>Кто:</b> {name_str}\n"
         f"📞 <b>Телефон:</b> {user_phone}\n\n"
         f"🏍 <b>Мотоцикл:</b> {moto_str}\n"
         f"🔧 <b>Проблема:</b> {problem}\n\n"

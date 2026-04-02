@@ -31,6 +31,7 @@ interface UserProfile {
   gender?: "male" | "female";
   role?: "user" | "admin" | "moderator" | "ceo";
   created_at?: string;
+  username?: string;
 }
 
 interface TelegramUser {

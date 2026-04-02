@@ -102,13 +102,14 @@ const Help = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_name:   user?.name || 'Не указано',
-          user_phone:  formData.phone || user?.phone || 'Не указан',
-          moto_model:  formData.motoModel,
-          moto_year:   formData.motoYear,
-          moto_plate:  formData.motoPlate,
-          problem:     formData.problemDescription,
-          location:    formData.location,
+          user_name:     user?.name || 'Не указано',
+          user_username: user?.username || null,
+          user_phone:    formData.phone || user?.phone || 'Не указан',
+          moto_model:    formData.motoModel,
+          moto_year:     formData.motoYear,
+          moto_plate:    formData.motoPlate,
+          problem:       formData.problemDescription,
+          location:      formData.location,
         }),
       });
 

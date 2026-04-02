@@ -914,7 +914,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             cur.execute(
                 """
-                SELECT u.id, u.email, u.name, u.role, u.created_at,
+                SELECT u.id, u.email, u.name, u.role, u.created_at, u.username,
                        p.callsign, p.avatar_url, p.phone, p.bio, p.location, p.gender
                 FROM users u
                 JOIN user_sessions s ON u.id = s.user_id
@@ -948,6 +948,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'bio': verify_user.get('bio'),
                         'location': verify_user.get('location'),
                         'gender': verify_user.get('gender'),
+                        'username': verify_user.get('username'),
                     }
                 }),
                 'isBase64Encoded': False
