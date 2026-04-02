@@ -138,10 +138,7 @@ const ShopPageFilters: React.FC<ShopPageFiltersProps> = ({
           <div className="flex gap-2">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-accent hover:bg-accent/90">
-                  <Icon name="Plus" className="h-4 w-4 mr-2" />
-                  Добавить
-                </Button>
+                <span className="hidden" />
               </DialogTrigger>
               <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
@@ -329,14 +326,7 @@ const ShopPageFilters: React.FC<ShopPageFiltersProps> = ({
               </DialogContent>
             </Dialog>
 
-            <Button
-              variant={isEditing ? "default" : "outline"}
-              onClick={() => setIsEditing(!isEditing)}
-              size="sm"
-            >
-              <Icon name="Edit" className="h-4 w-4 mr-2" />
-              {isEditing ? "Сохранить" : "Редактировать"}
-            </Button>
+
           </div>
         </div>
 
