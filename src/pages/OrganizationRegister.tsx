@@ -162,6 +162,7 @@ const OrganizationRegister: React.FC = () => {
                 <option value="Магазин">Магазин</option>
                 <option value="Сервис">Сервис</option>
                 <option value="Мотошкола">Мотошкола</option>
+                
               </select>
             </div>
 
