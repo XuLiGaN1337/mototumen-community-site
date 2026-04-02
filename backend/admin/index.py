@@ -985,10 +985,36 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             cur.execute(
                 f"""UPDATE {SCHEMA}.organizations
                     SET name=%s, type=%s, description=%s, address=%s, phone=%s,
-                        email=%s, website=%s, working_hours=%s, is_active=false, updated_at=CURRENT_TIMESTAMP
+                        email=%s, website=%s, working_hours=%s, updated_at=CURRENT_TIMESTAMP
                     WHERE id=%s AND user_id=%s""",
                 (name, org_type, description, address, phone, email, website, working_hours, org_id, user['id'])
             )
+            conn.commit()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
+
+        # Удаление организации пользователем
+        if method == 'DELETE' and action == 'delete-organization':
+            body = json.loads(event.get('body', '{}'))
+            org_id = body.get('organization_id')
+            if not org_id:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'organization_id обязателен'}), 'isBase64Encoded': False}
+            # CEO/admin могут удалять любую, пользователь — только свою
+            if user['role'] in ('ceo', 'admin'):
+                cur.execute(f"SELECT id, user_id FROM {SCHEMA}.organizations WHERE id = %s", (org_id,))
+            else:
+                cur.execute(f"SELECT id, user_id FROM {SCHEMA}.organizations WHERE id = %s AND user_id = %s", (org_id, user['id']))
+            org_row = cur.fetchone()
+            if not org_row:
+                return {'statusCode': 403, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Нет прав или организация не найдена'}), 'isBase64Encoded': False}
+            # Архивируем карточки, деактивируем организацию
+            cur.execute(f"UPDATE {SCHEMA}.shops SET is_archived=true WHERE organization_id = %s", (org_id,))
+            cur.execute(f"UPDATE {SCHEMA}.organizations SET is_active=false WHERE id = %s", (org_id,))
+            # Снимаем флаг is_organization у владельца (только если нет других активных орг)
+            owner_id = org_row['user_id']
+            cur.execute(f"SELECT COUNT(*) as cnt FROM {SCHEMA}.organizations WHERE user_id = %s AND is_active = true AND id != %s", (owner_id, org_id))
+            remaining = cur.fetchone()['cnt']
+            if remaining == 0:
+                cur.execute(f"UPDATE {SCHEMA}.users SET is_organization = false WHERE id = %s", (owner_id,))
             conn.commit()
             return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
 
@@ -1222,34 +1248,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             body = json.loads(event.get('body') or '{}')
             shop_id = body.get('shop_id')
             if not shop_id:
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'shop_id обязателен'}),
-                    'isBase64Encoded': False
-                }
-            # Проверяем что карточка принадлежит пользователю
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'shop_id обязателен'}), 'isBase64Encoded': False}
+            # Проверяем право: владелец организации или CEO/admin
             cur.execute(
                 f"""SELECT s.id FROM {SCHEMA}.shops s
-                    JOIN {SCHEMA}.organization_requests orq ON s.organization_id = orq.id
-                    WHERE s.id = %s AND orq.user_id = %s""",
+                    JOIN {SCHEMA}.organizations o ON s.organization_id = o.id
+                    WHERE s.id = %s AND o.user_id = %s""",
                 (shop_id, user['id'])
             )
             if not cur.fetchone() and user['role'] not in ('ceo', 'admin'):
-                return {
-                    'statusCode': 403,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Нет прав на удаление'}),
-                    'isBase64Encoded': False
-                }
-            cur.execute(f"DELETE FROM {SCHEMA}.shops WHERE id = %s", (shop_id,))
+                return {'statusCode': 403, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Нет прав на удаление'}), 'isBase64Encoded': False}
+            cur.execute(f"UPDATE {SCHEMA}.shops SET is_archived=true WHERE id = %s", (shop_id,))
             conn.commit()
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'success': True}),
-                'isBase64Encoded': False
-            }
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
 
         # Список магазинов
         if method == 'GET' and action == 'shops':
@@ -1278,36 +1289,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'statusCode': 200,
                 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                 'body': json.dumps({'shops': shops}, default=str),
-                'isBase64Encoded': False
-            }
-        
-        # Удаление магазина (только CEO)
-        if method == 'DELETE' and action == 'shop':
-            if user['role'] != 'ceo':
-                return {
-                    'statusCode': 403,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'Только CEO может удалять магазины'}),
-                    'isBase64Encoded': False
-                }
-            
-            shop_id = query_params.get('shopId')
-            
-            if not shop_id:
-                return {
-                    'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                    'body': json.dumps({'error': 'shopId обязателен'}),
-                    'isBase64Encoded': False
-                }
-            
-            cur.execute(f"DELETE FROM {SCHEMA}.shops WHERE id = %s", (shop_id,))
-            conn.commit()
-            
-            return {
-                'statusCode': 200,
-                'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
-                'body': json.dumps({'success': True, 'message': 'Магазин удалён'}),
                 'isBase64Encoded': False
             }
         
