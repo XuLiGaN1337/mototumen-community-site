@@ -3,11 +3,29 @@ import json
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+SCHEMA = 't_p21120869_mototumen_community_'
 
 def get_db_connection():
     database_url = os.environ.get('DATABASE_URL')
     return psycopg2.connect(database_url, cursor_factory=RealDictCursor)
+
+def get_user_from_token(cur, token: str) -> Optional[dict]:
+    cur.execute(f"""
+        SELECT u.id, u.name, u.email
+        FROM {SCHEMA}.users u
+        JOIN {SCHEMA}.user_sessions s ON u.id = s.user_id
+        WHERE s.token = '{token}' AND s.expires_at > NOW()
+    """)
+    return cur.fetchone()
+
+def get_header(headers: dict, name: str) -> Optional[str]:
+    name_lower = name.lower()
+    for key, val in headers.items():
+        if key.lower() == name_lower:
+            return val
+    return None
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
@@ -216,12 +234,21 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     cur.execute(f"INSERT INTO service_items (service_id, service_name) VALUES ({service_id}, {escape(service)})")
                     
             elif content_type == 'announcements':
+                headers = event.get('headers', {})
+                token = get_header(headers, 'X-Auth-Token') or get_header(headers, 'X-Authorization')
+                if not token:
+                    return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Требуется авторизация'}), 'isBase64Encoded': False}
+                auth_user = get_user_from_token(cur, token)
+                if not auth_user:
+                    return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Неверный токен'}), 'isBase64Encoded': False}
+                author_name = auth_user['name']
+                user_id = auth_user['id']
                 cur.execute(f"""
-                    INSERT INTO announcements (title, description, category, image, author, contact, price, location) 
+                    INSERT INTO {SCHEMA}.announcements (title, description, category, image, author, contact, price, location, user_id) 
                     VALUES ({escape(body_data.get('title'))}, {escape(body_data.get('description'))}, 
                             {escape(body_data.get('category'))}, {escape(body_data.get('image'))}, 
-                            {escape(body_data.get('author'))}, {escape(body_data.get('contact'))},
-                            {escape(body_data.get('price'))}, {escape(body_data.get('location'))})
+                            {escape(author_name)}, {escape(body_data.get('contact'))},
+                            {escape(body_data.get('price'))}, {escape(body_data.get('location'))}, {user_id})
                     RETURNING id
                 """)
             
@@ -325,6 +352,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 'isBase64Encoded': False
             }
         
+        elif method == 'DELETE':
+            if content_type == 'announcements':
+                headers = event.get('headers', {})
+                token = get_header(headers, 'X-Auth-Token') or get_header(headers, 'X-Authorization')
+                if not token:
+                    return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Требуется авторизация'}), 'isBase64Encoded': False}
+                auth_user = get_user_from_token(cur, token)
+                if not auth_user:
+                    return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Неверный токен'}), 'isBase64Encoded': False}
+                body_data = json.loads(event.get('body', '{}'))
+                ann_id = body_data.get('id')
+                if not ann_id:
+                    return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id обязателен'}), 'isBase64Encoded': False}
+                cur.execute(f"UPDATE {SCHEMA}.announcements SET status='archived' WHERE id={ann_id} AND user_id={auth_user['id']}")
+                conn.commit()
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
+
         return {
             'statusCode': 405,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
