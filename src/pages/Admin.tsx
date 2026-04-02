@@ -124,6 +124,10 @@ const Admin = () => {
     return (
       <AdminPasswordVerify
         onVerified={() => setIsPasswordVerified(true)}
+        onPasswordReset={() => {
+          setHasPassword(true);
+          setIsPasswordVerified(true);
+        }}
         adminApi={ADMIN_API}
         token={token || ''}
         userName={user?.name}
