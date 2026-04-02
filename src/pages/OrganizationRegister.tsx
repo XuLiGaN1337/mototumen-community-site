@@ -159,13 +159,9 @@ const OrganizationRegister: React.FC = () => {
                 required
               >
                 <option value="">Выберите тип</option>
-                <option value="Магазин мототехники">Магазин мототехники</option>
-                <option value="Сервис">Сервис / Мастерская</option>
+                <option value="Магазин">Магазин</option>
+                <option value="Сервис">Сервис</option>
                 <option value="Мотошкола">Мотошкола</option>
-                <option value="Мотоклуб">Мотоклуб</option>
-                <option value="Прокат">Прокат</option>
-                <option value="Туристический центр">Туристический центр</option>
-                <option value="Другое">Другое</option>
               </select>
             </div>
 

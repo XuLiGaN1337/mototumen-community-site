@@ -1,13 +1,9 @@
 export const ORG_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
 
 export const SHOP_CATEGORIES = [
-  'Магазин мототехники',
+  'Магазин',
   'Сервис',
   'Мотошкола',
-  'Мотоклуб',
-  'Прокат',
-  'Туристический центр',
-  'Другое',
 ];
 
 export interface Shop {

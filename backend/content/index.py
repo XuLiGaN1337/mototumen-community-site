@@ -94,7 +94,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             search = query_params.get('search')
             
             # shops / services / schools — все из таблицы shops, различаются фильтром по категории
-            SHOP_CATS    = ("'Магазин мототехники','Прокат','Туристический центр','Другое','Мотоклуб'")
+            SHOP_CATS    = ("'Магазин'")
             SERVICE_CATS = ("'Сервис'")
             SCHOOL_CATS  = ("'Мотошкола'")
 
@@ -106,7 +106,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     FROM shops WHERE 1=1
                 """
                 if content_type == 'shops':
-                    base += f" AND (category IS NULL OR category IN ({SHOP_CATS}))"
+                    base += f" AND category IN ({SHOP_CATS})"
                 elif content_type == 'services':
                     base += f" AND category IN ({SERVICE_CATS})"
                 elif content_type == 'schools':
