@@ -93,52 +93,35 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             category = query_params.get('category')
             search = query_params.get('search')
             
-            if content_type == 'shops':
-                query = """
+            # shops / services / schools — все из таблицы shops, различаются фильтром по категории
+            SHOP_CATS    = ("'Магазин мототехники','Прокат','Туристический центр','Другое','Мотоклуб'")
+            SERVICE_CATS = ("'Сервис'")
+            SCHOOL_CATS  = ("'Мотошкола'")
+
+            if content_type in ('shops', 'services', 'schools'):
+                base = """
                     SELECT id, name, description, category, image, rating,
                            address, phone, website, organization_id,
                            is_open, working_hours, latitude, longitude, email, created_at
                     FROM shops WHERE 1=1
                 """
-                
+                if content_type == 'shops':
+                    base += f" AND (category IS NULL OR category IN ({SHOP_CATS}))"
+                elif content_type == 'services':
+                    base += f" AND category IN ({SERVICE_CATS})"
+                elif content_type == 'schools':
+                    base += f" AND category IN ({SCHOOL_CATS})"
+
                 if category and category != 'Все':
                     escaped_cat = category.replace("'", "''")
-                    query += f" AND category = '{escaped_cat}'"
-                
+                    base += f" AND category = '{escaped_cat}'"
+
                 if search:
                     escaped_search = search.replace("'", "''")
-                    query += f" AND (name ILIKE '%{escaped_search}%' OR description ILIKE '%{escaped_search}%')"
-                
-                query += " ORDER BY created_at DESC"
-                cur.execute(query)
-                
-            elif content_type == 'schools':
-                query = "SELECT s.*, array_agg(sc.course_name) as courses FROM schools s LEFT JOIN school_courses sc ON s.id = sc.school_id WHERE 1=1"
-                
-                if category and category != 'Все':
-                    escaped_cat = category.replace("'", "''")
-                    query += f" AND s.category = '{escaped_cat}'"
-                
-                if search:
-                    escaped_search = search.replace("'", "''")
-                    query += f" AND (s.name ILIKE '%{escaped_search}%' OR s.description ILIKE '%{escaped_search}%')"
-                
-                query += " GROUP BY s.id ORDER BY s.created_at DESC"
-                cur.execute(query)
-                
-            elif content_type == 'services':
-                query = "SELECT s.*, array_agg(si.service_name) as services FROM services s LEFT JOIN service_items si ON s.id = si.service_id WHERE 1=1"
-                
-                if category and category != 'Все':
-                    escaped_cat = category.replace("'", "''")
-                    query += f" AND s.category = '{escaped_cat}'"
-                
-                if search:
-                    escaped_search = search.replace("'", "''")
-                    query += f" AND (s.name ILIKE '%{escaped_search}%' OR s.description ILIKE '%{escaped_search}%')"
-                
-                query += " GROUP BY s.id ORDER BY s.created_at DESC"
-                cur.execute(query)
+                    base += f" AND (name ILIKE '%{escaped_search}%' OR description ILIKE '%{escaped_search}%')"
+
+                base += " ORDER BY created_at DESC"
+                cur.execute(base)
                 
             elif content_type == 'announcements':
                 query = "SELECT * FROM announcements WHERE status = 'active'"

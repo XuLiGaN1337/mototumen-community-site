@@ -165,7 +165,7 @@ export const OrganizationPanel: React.FC = () => {
 
   const startNewShop = () => {
     if (!selectedOrg) return;
-    setEditingShop({ organization_id: selectedOrg.id, name: '', description: '', category: '', address: '', phone: '', email: '', is_open: true });
+    setEditingShop({ organization_id: selectedOrg.id, name: '', description: '', category: selectedOrg.organization_type || '', address: selectedOrg.address || '', phone: selectedOrg.phone || '', email: selectedOrg.email || '', is_open: true });
     setShopImageFile(null);
     setShopImagePreview(null);
     setShowShopForm(true);

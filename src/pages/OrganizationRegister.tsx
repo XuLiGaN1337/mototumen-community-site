@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface OrganizationFormData {
   organization_name: string;
-  organization_type: 'shop' | 'service' | 'school' | '';
+  organization_type: string;
   description: string;
   address: string;
   phone: string;
@@ -159,9 +159,13 @@ const OrganizationRegister: React.FC = () => {
                 required
               >
                 <option value="">Выберите тип</option>
-                <option value="shop">Магазин</option>
-                <option value="service">Сервис</option>
-                <option value="school">Мотошкола</option>
+                <option value="Магазин мототехники">Магазин мототехники</option>
+                <option value="Сервис">Сервис / Мастерская</option>
+                <option value="Мотошкола">Мотошкола</option>
+                <option value="Мотоклуб">Мотоклуб</option>
+                <option value="Прокат">Прокат</option>
+                <option value="Туристический центр">Туристический центр</option>
+                <option value="Другое">Другое</option>
               </select>
             </div>
 
