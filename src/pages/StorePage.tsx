@@ -19,6 +19,7 @@ interface Product {
   category: string;
   inStock: boolean;
   description: string;
+  discount: number;
 }
 
 interface CartItem extends Product {
@@ -126,18 +127,19 @@ const StorePage: React.FC = () => {
     const loadProducts = async () => {
       setLoading(true);
       try {
-        const response = await fetch('https://functions.poehali.dev/cc081168-1f9b-4722-a67a-d65236d24d20');
+        const response = await fetch('https://functions.poehali.dev/c79cc1b5-5a45-4360-8054-9dc37d34ea9a?action=public-products');
         const data = await response.json();
-        setProducts(data.products.map((p: any) => ({
+        setProducts((data.products || []).map((p: Product) => ({
           id: String(p.id),
           name: p.name,
-          brand: p.brand,
-          model: p.model,
-          price: p.price,
-          image: p.image,
-          category: p.category,
+          brand: p.brand || '',
+          model: p.model || '',
+          price: Number(p.price),
+          image: p.image || '',
+          category: p.category || '',
           inStock: p.inStock,
-          description: p.description
+          description: p.description || '',
+          discount: p.discount || 0,
         })));
       } catch (error) {
         console.error('Ошибка загрузки товаров:', error);
@@ -155,18 +157,18 @@ const StorePage: React.FC = () => {
       }
       
       try {
-        const response = await fetch('https://functions.poehali.dev/81c54822-a16d-4abd-9085-a49f6c685696', {
-          headers: { 'X-Auth-Token': String(user.id) }
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+        if (!token) { setHasStoreAccess(false); return; }
+        const response = await fetch('https://functions.poehali.dev/c79cc1b5-5a45-4360-8054-9dc37d34ea9a?action=check-access', {
+          headers: { 'X-Auth-Token': token }
         });
-        
         if (response.ok) {
           const data = await response.json();
           setHasStoreAccess(data.hasAccess);
         } else {
           setHasStoreAccess(false);
         }
-      } catch (error) {
-        console.error('Store access check error:', error);
+      } catch {
         setHasStoreAccess(false);
       }
     };
@@ -222,7 +224,12 @@ const StorePage: React.FC = () => {
     setShowCart(false);
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => {
+    const finalPrice = item.discount > 0
+      ? Math.round(item.price * (1 - item.discount / 100))
+      : item.price;
+    return sum + finalPrice * item.quantity;
+  }, 0);
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (loading) {

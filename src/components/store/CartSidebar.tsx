@@ -10,6 +10,7 @@ interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  discount: number;
 }
 
 interface CartSidebarProps {
@@ -53,7 +54,16 @@ const CartSidebar: React.FC<CartSidebarProps> = ({
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-semibold text-white truncate">{item.name}</h4>
                     <p className="text-xs text-gray-400">{item.brand}</p>
-                    <p className="text-sm font-bold text-[#4499ff] mt-1">{item.price.toLocaleString()} ₽</p>
+                    {item.discount > 0 ? (
+                      <div className="mt-1 flex items-baseline gap-1.5">
+                        <span className="text-sm font-bold text-red-400">
+                          {Math.round(item.price * (1 - item.discount / 100)).toLocaleString('ru-RU')} ₽
+                        </span>
+                        <span className="text-xs text-gray-500 line-through">{item.price.toLocaleString('ru-RU')} ₽</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-bold text-[#4499ff] mt-1">{item.price.toLocaleString('ru-RU')} ₽</p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end justify-between">
                     <button
