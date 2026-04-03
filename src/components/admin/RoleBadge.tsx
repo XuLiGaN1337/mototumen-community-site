@@ -18,6 +18,8 @@ const ROLE_CONFIG = {
   ceo: { emoji: " 👑", label: "CEO" },
   admin: { emoji: " ⚡", label: "Админ" },
   moderator: { emoji: " 🛡️", label: "Модератор" },
+  organizer: { emoji: " 🎯", label: "Организатор" },
+  gymkhana: { emoji: " 🏍️", label: "Джимханист" },
   user: { emoji: "", label: "Пользователь" }
 };
 
@@ -109,37 +111,24 @@ export const RoleBadge: React.FC<RoleBadgeProps> = ({
       </TooltipProvider>
 
       {showOptions && (
-        <div className="absolute top-8 left-0 z-50 bg-popover border rounded-lg shadow-lg p-2 space-y-1 min-w-[140px]">
-          {currentRole !== 'admin' && (
+        <div className="absolute top-8 left-0 z-50 bg-popover border rounded-lg shadow-lg p-2 space-y-1 min-w-[160px]">
+          {([
+            { role: 'admin', label: '⚡ Админ' },
+            { role: 'moderator', label: '🛡️ Модератор' },
+            { role: 'organizer', label: '🎯 Организатор' },
+            { role: 'gymkhana', label: '🏍️ Джимханист' },
+            { role: 'user', label: 'Пользователь' },
+          ] as const).filter(r => r.role !== currentRole).map(r => (
             <Button
+              key={r.role}
               size="sm"
               variant="ghost"
               className="w-full justify-start"
-              onClick={() => handleRoleSelect('admin')}
+              onClick={() => handleRoleSelect(r.role)}
             >
-              ⚡ Админ
+              {r.label}
             </Button>
-          )}
-          {currentRole !== 'moderator' && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => handleRoleSelect('moderator')}
-            >
-              🛡️ Модератор
-            </Button>
-          )}
-          {currentRole !== 'user' && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => handleRoleSelect('user')}
-            >
-              Пользователь
-            </Button>
-          )}
+          ))}
         </div>
       )}
     </div>

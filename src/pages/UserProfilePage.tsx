@@ -335,7 +335,14 @@ export const UserProfilePage: React.FC = () => {
                       CEO — управление ролью
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {(['user', 'moderator', 'admin', 'ceo'] as const).map((role) => (
+                      {([
+                        { role: 'user', label: 'Пользователь' },
+                        { role: 'gymkhana', label: '🏍️ Джимханист' },
+                        { role: 'organizer', label: '🎯 Организатор' },
+                        { role: 'moderator', label: '🛡️ Модератор' },
+                        { role: 'admin', label: '⚡ Админ' },
+                        { role: 'ceo', label: '👑 CEO' },
+                      ] as const).map(({ role, label }) => (
                         <button
                           key={role}
                           disabled={roleChanging || profile.role === role}
@@ -346,7 +353,7 @@ export const UserProfilePage: React.FC = () => {
                               : 'bg-[#252836] text-gray-400 hover:text-white hover:bg-[#2a2e3f] border border-gray-700'
                           }`}
                         >
-                          {getRoleEmoji(role)}{role === 'user' ? 'user' : role}
+                          {label}
                         </button>
                       ))}
                     </div>

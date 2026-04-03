@@ -29,7 +29,7 @@ interface UserProfile {
   location?: string;
   avatar_url?: string;
   gender?: "male" | "female";
-  role?: "user" | "admin" | "moderator" | "ceo";
+  role?: "user" | "admin" | "moderator" | "ceo" | "organizer" | "gymkhana";
   created_at?: string;
   username?: string;
 }

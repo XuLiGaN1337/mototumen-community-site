@@ -605,7 +605,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'isBase64Encoded': False
                 }
             
-            if new_role not in ['user', 'moderator', 'admin', 'ceo']:
+            if new_role not in ['user', 'moderator', 'admin', 'ceo', 'organizer', 'gymkhana']:
                 return {
                     'statusCode': 400,
                     'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
