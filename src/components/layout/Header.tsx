@@ -111,6 +111,12 @@ const Header: React.FC<HeaderProps> = () => {
             >
               События
             </a>
+            <a
+              href="/gymkhana"
+              className="text-gray-300 hover:text-[#004488] transition-colors"
+            >
+              Джимхана
+            </a>
 
             {/* Dropdown Menu for "Полезное" */}
             <div className="relative group">
@@ -291,6 +297,7 @@ const Header: React.FC<HeaderProps> = () => {
                 { href: "/service", label: "Сервис", icon: "Wrench" },
                 { href: "/schools", label: "Мотошколы", icon: "GraduationCap" },
                 { href: "/events", label: "События", icon: "Calendar" },
+                { href: "/gymkhana", label: "Джимхана", icon: "Flag" },
                 { href: "/users", label: "Участники", icon: "Users" },
               ].map((item) => (
                 <a
