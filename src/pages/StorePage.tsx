@@ -158,10 +158,10 @@ const StorePage: React.FC = () => {
       }
       
       try {
-        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-        if (!token) { setHasStoreAccess(false); return; }
+        const storedToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        if (!storedToken) { setHasStoreAccess(false); return; }
         const response = await fetch('https://functions.poehali.dev/c79cc1b5-5a45-4360-8054-9dc37d34ea9a?action=check-access', {
-          headers: { 'X-Auth-Token': token }
+          headers: { 'X-Auth-Token': storedToken }
         });
         if (response.ok) {
           const data = await response.json();
