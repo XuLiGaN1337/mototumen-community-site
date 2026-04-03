@@ -11,6 +11,7 @@ import { getRoleEmoji } from "@/components/admin/RoleBadge";
 import { CallsignPlate } from "@/components/profile/CallsignPlate";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
+const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
 
 interface UserProfile {
   id: number;
@@ -50,6 +51,9 @@ export const UserProfilePage: React.FC = () => {
   const [friendStatus, setFriendStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'friends'>('none');
   const { token, user: currentUser } = useAuth();
   const { toast } = useToast();
+  const [roleChanging, setRoleChanging] = useState(false);
+
+  const isCeo = currentUser?.role === 'ceo';
 
   useEffect(() => {
     if (userId) {
@@ -200,6 +204,30 @@ export const UserProfilePage: React.FC = () => {
   }
 
   const isOwnProfile = currentUser && currentUser.id === profile.id;
+
+  const handleRoleChange = async (newRole: string) => {
+    if (!token || !isCeo || !profile) return;
+    if (!confirm(`Выдать роль «${newRole}» пользователю ${profile.name}?`)) return;
+    setRoleChanging(true);
+    try {
+      const res = await fetch(`${ADMIN_API}?action=user-role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
+        body: JSON.stringify({ userId: profile.id, role: newRole }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfile(prev => prev ? { ...prev, role: newRole } : prev);
+        toast({ title: `Роль изменена на «${newRole}»` });
+      } else {
+        toast({ title: data.error || 'Ошибка', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Ошибка сети', variant: 'destructive' });
+    } finally {
+      setRoleChanging(false);
+    }
+  };
   const telegramUsername = profile.telegram || profile.telegram_username || profile.username;
 
   return (
@@ -298,6 +326,32 @@ export const UserProfilePage: React.FC = () => {
                     <div className="text-[11px] text-gray-500">Избранное</div>
                   </div>
                 </div>
+
+                {/* CEO: смена роли */}
+                {isCeo && !isOwnProfile && (
+                  <div className="mb-4 p-3 bg-[#1e2332] rounded-lg border border-yellow-900/40">
+                    <p className="text-xs text-yellow-600 mb-2 flex items-center gap-1">
+                      <Icon name="Crown" size={12} />
+                      CEO — управление ролью
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {(['user', 'moderator', 'admin', 'ceo'] as const).map((role) => (
+                        <button
+                          key={role}
+                          disabled={roleChanging || profile.role === role}
+                          onClick={() => handleRoleChange(role)}
+                          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                            profile.role === role
+                              ? 'bg-yellow-600/30 text-yellow-400 border border-yellow-600/50 cursor-default'
+                              : 'bg-[#252836] text-gray-400 hover:text-white hover:bg-[#2a2e3f] border border-gray-700'
+                          }`}
+                        >
+                          {getRoleEmoji(role)}{role === 'user' ? 'user' : role}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Кнопка дружбы */}
                 {!isOwnProfile && token && (
