@@ -13,7 +13,8 @@ def get_db_connection():
 
 def get_user_from_token(cur, token: str) -> Optional[dict]:
     cur.execute(f"""
-        SELECT u.id, u.name, u.email
+        SELECT u.id, u.name, u.email,
+               COALESCE((SELECT role FROM {SCHEMA}.user_roles WHERE user_id = u.id ORDER BY id LIMIT 1), 'user') as role
         FROM {SCHEMA}.users u
         JOIN {SCHEMA}.user_sessions s ON u.id = s.user_id
         WHERE s.token = '{token}' AND s.expires_at > NOW()
@@ -377,7 +378,11 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 ann_id = body_data.get('id')
                 if not ann_id:
                     return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'id обязателен'}), 'isBase64Encoded': False}
-                cur.execute(f"UPDATE {SCHEMA}.announcements SET status='archived' WHERE id={ann_id} AND user_id={auth_user['id']}")
+                is_admin = auth_user.get('role') in ('admin', 'ceo', 'moderator')
+                if is_admin:
+                    cur.execute(f"UPDATE {SCHEMA}.announcements SET status='archived' WHERE id={ann_id}")
+                else:
+                    cur.execute(f"UPDATE {SCHEMA}.announcements SET status='archived' WHERE id={ann_id} AND user_id={auth_user['id']}")
                 conn.commit()
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
 

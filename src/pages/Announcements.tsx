@@ -52,7 +52,7 @@ const Announcements: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Все");
-  const { isAuthenticated, token, user } = useAuth();
+  const { isAuthenticated, token, user, isAdmin } = useAuth();
   const { toast } = useToast();
   const { open: openProfile, modal: profileModal } = useUserProfileModal();
   const categories = useFilterCategories("announcements", FALLBACK_CATEGORIES);
@@ -274,6 +274,7 @@ const Announcements: React.FC = () => {
               {announcements.map((ann) => {
                 const isExpanded = expandedCards.has(ann.id!);
                 const isOwner = user && ann.user_id === user.id;
+                const canDelete = isOwner || isAdmin;
                 return (
                   <Card key={ann.id} className="bg-zinc-800 border-zinc-700 hover:border-accent transition-all flex flex-col">
                     <CardHeader className="pb-2 p-4">
@@ -283,7 +284,7 @@ const Announcements: React.FC = () => {
                           <span className="text-xs text-zinc-400">
                             {ann.created_at ? new Date(ann.created_at).toLocaleDateString("ru-RU") : ""}
                           </span>
-                          {(isOwner || tab === "my") && (
+                          {canDelete && (
                             <button
                               onClick={() => handleDelete(ann.id!)}
                               className="text-zinc-500 hover:text-red-400 transition-colors"
