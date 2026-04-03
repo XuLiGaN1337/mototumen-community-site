@@ -146,6 +146,7 @@ const Profile = () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates: any = {
+        name: editForm.name,
         phone: editForm.phone,
         bio: editForm.bio,
         location: editForm.location,
@@ -203,15 +204,16 @@ const Profile = () => {
     if (!token) return;
     try {
       setLoading(true);
-      await fetch(AUTH_API, {
+      const res = await fetch(AUTH_API, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
         body: JSON.stringify({ remove_avatar: true }),
       });
+      if (!res.ok) throw new Error('Ошибка');
       toast({ title: "Аватар убран", description: "Фото перенесено в галерею" });
       await loadProfile();
     } catch {
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: "Ошибка удаления аватара", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -221,15 +223,16 @@ const Profile = () => {
     if (!token) return;
     try {
       setLoading(true);
-      await fetch(`${AUTH_API}?action=photos`, {
+      const res = await fetch(`${AUTH_API}?action=photos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
         body: JSON.stringify({ action: 'set_as_avatar', photo_id: photoId }),
       });
+      if (!res.ok) throw new Error('Ошибка');
       toast({ title: "Аватар обновлён" });
       await loadProfile();
     } catch {
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: "Не удалось обновить аватар", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -239,14 +242,15 @@ const Profile = () => {
     if (!token) return;
     try {
       setLoading(true);
-      await fetch(`${AUTH_API}?action=photos&photo_id=${photoId}`, {
+      const res = await fetch(`${AUTH_API}?action=photos&photo_id=${photoId}`, {
         method: 'DELETE',
         headers: { 'X-Auth-Token': token },
       });
+      if (!res.ok) throw new Error('Ошибка');
       setPhotos(prev => prev.filter(p => p.id !== photoId));
       toast({ title: "Фото удалено" });
     } catch {
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: "Не удалось удалить фото", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -257,16 +261,19 @@ const Profile = () => {
     try {
       const uploadResult = await uploadFile(file, { folder: 'photos' });
       if (!uploadResult) throw new Error('Не удалось загрузить фото');
-
-      await fetch(`${AUTH_API}?action=photos`, {
+      const res = await fetch(`${AUTH_API}?action=photos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token },
         body: JSON.stringify({ action: 'add_photo', photo_url: uploadResult.url }),
       });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Ошибка сохранения');
+      }
       toast({ title: "Фото загружено" });
       await loadProfile();
-    } catch {
-      toast({ title: "Ошибка загрузки", variant: "destructive" });
+    } catch (e) {
+      toast({ title: e instanceof Error ? e.message : "Ошибка загрузки", variant: "destructive" });
     }
   };
 

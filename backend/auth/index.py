@@ -1379,18 +1379,25 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 if 'avatar_url' in body and body['avatar_url']:
                     move_avatar_to_photos(cur, user['id'])
                 
+                # Обновляем имя в таблице users (если передано)
+                if 'name' in body and body['name']:
+                    name_val = str(body['name']).strip().replace("'", "''")
+                    if name_val:
+                        cur.execute(f"UPDATE users SET name = '{name_val}' WHERE id = {user['id']}")
+
                 updates = []
-                
+
                 for field in ['phone', 'bio', 'location', 'avatar_url', 'gender', 'callsign', 'telegram']:
                     if field in body:
                         val = str(body[field]).replace("'", "''") if body[field] else 'NULL'
                         updates.append(f"{field} = '{val}'" if body[field] else f"{field} = NULL")
-                
+
                 if updates:
                     updates.append("updated_at = NOW()")
                     cur.execute(f"UPDATE user_profiles SET {', '.join(updates)} WHERE user_id = {user['id']}")
-                    conn.commit()
-                
+
+                conn.commit()
+
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Updated'}), 'isBase64Encoded': False}
         
         return {
