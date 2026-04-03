@@ -5,6 +5,7 @@
   "telegram-bot-auth": "https://functions.poehali.dev/223eee75-2616-4beb-82b4-313589e8145b",
   "auth": "https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e",
   "content": "https://functions.poehali.dev/34a08e29-2d68-492d-958c-6de39b313388",
+  "zm-store-products": "https://functions.poehali.dev/c79cc1b5-5a45-4360-8054-9dc37d34ea9a",
   "upload-media": "https://functions.poehali.dev/58427de2-ff84-4fa8-90eb-94359b97798b",
   "admin": "https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f"
 }

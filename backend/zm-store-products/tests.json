@@ -1,19 +1,25 @@
 {
   "tests": [
     {
-      "name": "OPTIONS request for CORS",
+      "name": "OPTIONS CORS",
       "method": "OPTIONS",
       "path": "/",
       "expectedStatus": 200
     },
     {
-      "name": "GET without auth - should deny",
+      "name": "GET без токена — 401",
       "method": "GET",
       "path": "/",
-      "expectedStatus": 403,
-      "expectedBody": {
-        "error": "string"
-      },
+      "expectedStatus": 401,
+      "expectedBody": { "error": "string" },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "GET публичные товары",
+      "method": "GET",
+      "path": "/?action=public-products",
+      "expectedStatus": 200,
+      "expectedBody": { "products": [] },
       "bodyMatcher": "partial"
     }
   ]

@@ -4,9 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Package, Users, Plus } from "lucide-react";
 import Icon from "@/components/ui/icon";
+
+const API = "https://functions.poehali.dev/c79cc1b5-5a45-4360-8054-9dc37d34ea9a";
 
 interface Product {
   id: number;
@@ -28,58 +30,34 @@ interface Seller {
   role: string;
   is_active: boolean;
   assigned_at: string;
+  user_name?: string;
+  email?: string;
 }
 
 const ZMStoreDashboard = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
   const [isCEO, setIsCEO] = useState(false);
 
-  useEffect(() => {
-    checkAccess();
-  }, [user, token]);
+  useEffect(() => { checkAccess(); }, [token]);
+
+  const h = () => ({ "X-Auth-Token": token || "" });
 
   const checkAccess = async () => {
-    if (!user || !token) {
-      navigate("/");
-      return;
-    }
-
+    if (!token) { navigate("/"); return; }
     try {
-      const response = await fetch("https://functions.poehali.dev/81c54822-a16d-4abd-9085-a49f6c685696", {
-        headers: {
-          "X-Auth-Token": token
-        }
-      });
-
-      if (!response.ok) {
-        toast({
-          title: "Доступ запрещен",
-          description: "У вас нет прав для управления ZM Store",
-          variant: "destructive"
-        });
-        navigate("/");
-        return;
-      }
-
-      const data = await response.json();
-      if (data.hasAccess) {
-        setHasAccess(true);
-        setIsCEO(data.role === 'ceo');
-        loadProducts();
-        if (data.role === 'ceo') {
-          loadSellers();
-        }
-      } else {
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("Access check error:", error);
+      const res = await fetch(`${API}?action=check-access`, { headers: h() });
+      if (!res.ok) { navigate("/"); return; }
+      const data = await res.json();
+      if (!data.hasAccess) { navigate("/"); return; }
+      setIsCEO(data.isCeo);
+      await loadProducts();
+      if (data.isCeo) await loadSellers();
+    } catch {
       navigate("/");
     } finally {
       setLoading(false);
@@ -87,107 +65,57 @@ const ZMStoreDashboard = () => {
   };
 
   const loadProducts = async () => {
-    try {
-      const response = await fetch("https://functions.poehali.dev/cbc3e9d9-0880-4a6c-b047-401adf04e40a", {
-        headers: {
-          "X-Auth-Token": token || ""
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error("Failed to load products:", error);
-    }
+    const res = await fetch(API, { headers: h() });
+    if (res.ok) { const d = await res.json(); setProducts(d.products || []); }
   };
 
   const loadSellers = async () => {
-    if (!isCEO) return;
-    
-    try {
-      const response = await fetch("https://functions.poehali.dev/b9e68923-db5a-4903-9eb9-7ff37e2337c7", {
-        headers: {
-          "X-Auth-Token": token || ""
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSellers(data.sellers || []);
-      }
-    } catch (error) {
-      console.error("Failed to load sellers:", error);
-    }
+    const res = await fetch(`${API}?action=sellers`, { headers: h() });
+    if (res.ok) { const d = await res.json(); setSellers(d.sellers || []); }
   };
 
   const deleteProduct = async (id: number) => {
-    if (!confirm("Удалить этот товар?")) return;
-
-    try {
-      const response = await fetch(`https://functions.poehali.dev/cbc3e9d9-0880-4a6c-b047-401adf04e40a?id=${id}`, {
-        method: "DELETE",
-        headers: {
-          "X-Auth-Token": token || ""
-        }
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Успешно",
-          description: "Товар удален"
-        });
-        loadProducts();
-      } else {
-        throw new Error("Failed to delete");
-      }
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось удалить товар",
-        variant: "destructive"
-      });
+    if (!confirm("Удалить товар?")) return;
+    const res = await fetch(`${API}?id=${id}`, { method: "DELETE", headers: h() });
+    if (res.ok) {
+      toast({ title: "Товар удалён" });
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } else {
+      toast({ title: "Ошибка удаления", variant: "destructive" });
     }
   };
 
-  const toggleSeller = async (id: number, isActive: boolean) => {
-    try {
-      const response = await fetch(`https://functions.poehali.dev/b9e68923-db5a-4903-9eb9-7ff37e2337c7`, {
-        method: "PUT",
-        headers: {
-          "X-Auth-Token": token || "",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ id, is_active: !isActive })
-      });
+  const toggleSeller = async (seller: Seller) => {
+    const res = await fetch(`${API}?action=sellers`, {
+      method: "PUT",
+      headers: { ...h(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id: seller.id, is_active: !seller.is_active }),
+    });
+    if (res.ok) {
+      toast({ title: seller.is_active ? "Продавец деактивирован" : "Продавец активирован" });
+      loadSellers();
+    } else {
+      toast({ title: "Ошибка", variant: "destructive" });
+    }
+  };
 
-      if (response.ok) {
-        toast({
-          title: "Успешно",
-          description: isActive ? "Продавец деактивирован" : "Продавец активирован"
-        });
-        loadSellers();
-      } else {
-        throw new Error("Failed to update");
-      }
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить продавца",
-        variant: "destructive"
-      });
+  const deleteSeller = async (id: number) => {
+    if (!confirm("Удалить продавца?")) return;
+    const res = await fetch(`${API}?action=sellers&id=${id}`, { method: "DELETE", headers: h() });
+    if (res.ok) {
+      toast({ title: "Продавец удалён" });
+      setSellers(prev => prev.filter(s => s.id !== id));
+    } else {
+      toast({ title: "Ошибка", variant: "destructive" });
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p>Загрузка...</p>
+        <Icon name="Loader2" className="h-8 w-8 animate-spin text-accent" />
       </div>
     );
-  }
-
-  if (!hasAccess) {
-    return null;
   }
 
   return (
@@ -195,144 +123,139 @@ const ZMStoreDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" onClick={() => navigate("/")}>
-            <Icon name="ArrowLeft" className="mr-2" size={16} />
-            Назад
+            <Icon name="ArrowLeft" className="mr-2" size={16} />Назад
           </Button>
-          <h1 className="text-3xl font-bold">ZM Store - Панель управления</h1>
+          <div>
+            <h1 className="text-3xl font-bold">ZM Store</h1>
+            <p className="text-muted-foreground text-sm">Панель управления магазином</p>
+          </div>
         </div>
 
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={`grid w-full ${isCEO ? "grid-cols-2" : "grid-cols-1"}`}>
             <TabsTrigger value="products">
-              <Icon name="Package" className="mr-2" size={16} />
-              Товары
+              <Icon name="Package" className="mr-2" size={16} />Товары ({products.length})
             </TabsTrigger>
             {isCEO && (
               <TabsTrigger value="sellers">
-                <Icon name="Users" className="mr-2" size={16} />
-                Продавцы
+                <Icon name="Users" className="mr-2" size={16} />Продавцы ({sellers.length})
               </TabsTrigger>
             )}
           </TabsList>
 
-          <TabsContent value="products" className="space-y-4">
+          {/* ТОВАРЫ */}
+          <TabsContent value="products" className="space-y-4 mt-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Управление товарами</CardTitle>
-                    <CardDescription>Добавляйте, редактируйте и удаляйте товары</CardDescription>
+                    <CardTitle>Товары</CardTitle>
+                    <CardDescription>Добавляйте, редактируйте и удаляйте товары магазина</CardDescription>
                   </div>
                   <Button onClick={() => navigate("/zm-store/product/new")}>
-                    <Icon name="Plus" className="mr-2" size={16} />
-                    Добавить товар
+                    <Icon name="Plus" className="mr-2" size={16} />Добавить товар
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4">
-                  {products.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">Нет товаров</p>
-                  ) : (
-                    products.map((product) => (
-                      <Card key={product.id}>
-                        <CardContent className="flex items-center gap-4 p-4">
-                          {product.image && (
-                            <img
-                              src={product.image}
-                              alt={product.name}
-                              className="w-20 h-20 object-cover rounded"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{product.name}</h3>
-                            <p className="text-sm text-muted-foreground">{product.description}</p>
-                            <p className="text-sm font-bold mt-1">{product.price} ₽</p>
-                            <div className="flex gap-2 mt-1">
-                              {product.category && (
-                                <span className="text-xs bg-secondary px-2 py-1 rounded">
-                                  {product.category}
-                                </span>
-                              )}
-                              <span className={`text-xs px-2 py-1 rounded ${product.inStock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                                {product.inStock ? "В наличии" : "Нет в наличии"}
-                              </span>
-                            </div>
+                {products.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Icon name="Package" className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-muted-foreground">Нет товаров. Добавьте первый!</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {products.map((p) => (
+                      <div key={p.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/5 transition-colors">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                            <Icon name="Package" size={24} className="text-muted-foreground" />
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/zm-store/product/${product.id}`)}
-                            >
-                              Редактировать
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteProduct(product.id)}
-                            >
-                              Удалить
-                            </Button>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold truncate">{p.name}</h3>
+                            <Badge variant={p.inStock ? "default" : "secondary"} className="text-xs">
+                              {p.inStock ? "В наличии" : "Нет в наличии"}
+                            </Badge>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
+                          <p className="text-sm text-muted-foreground truncate">{p.brand} {p.model}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="font-bold text-accent">{Number(p.price).toLocaleString("ru-RU")} ₽</span>
+                            {p.category && <span className="text-xs bg-secondary px-2 py-0.5 rounded">{p.category}</span>}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/zm-store/product/${p.id}`)}>
+                            <Icon name="Edit" size={14} />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteProduct(p.id)} className="text-red-500 hover:text-red-600">
+                            <Icon name="Trash2" size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* ПРОДАВЦЫ (только CEO) */}
           {isCEO && (
-            <TabsContent value="sellers" className="space-y-4">
+            <TabsContent value="sellers" className="space-y-4 mt-4">
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Управление продавцами</CardTitle>
-                      <CardDescription>Назначайте продавцов для ZM Store</CardDescription>
+                      <CardTitle>Продавцы</CardTitle>
+                      <CardDescription>Управляйте доступом продавцов к магазину</CardDescription>
                     </div>
                     <Button onClick={() => navigate("/zm-store/seller/new")}>
-                      <Icon name="Plus" className="mr-2" size={16} />
-                      Добавить продавца
+                      <Icon name="Plus" className="mr-2" size={16} />Добавить продавца
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4">
-                    {sellers.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">Нет продавцов</p>
-                    ) : (
-                      sellers.map((seller) => (
-                        <Card key={seller.id}>
-                          <CardContent className="flex items-center justify-between p-4">
-                            <div>
-                              <h3 className="font-semibold">{seller.full_name}</h3>
-                              <p className="text-sm text-muted-foreground">Telegram ID: {seller.telegram_id}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Роль: {seller.role === 'ceo' ? 'CEO' : 'Продавец'} • Назначен: {new Date(seller.assigned_at).toLocaleDateString()}
-                              </p>
+                  {sellers.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Icon name="Users" className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground">Нет продавцов</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {sellers.map((s) => (
+                        <div key={s.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                          <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                            <Icon name="User" size={18} className="text-accent" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{s.full_name}</span>
+                              <Badge variant={s.is_active ? "default" : "secondary"} className="text-xs">
+                                {s.is_active ? "Активен" : "Деактивирован"}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">{s.role}</Badge>
                             </div>
-                            <div className="flex gap-2">
-                              <span className={`text-xs px-2 py-1 rounded ${seller.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                                {seller.is_active ? "Активен" : "Неактивен"}
-                              </span>
-                              {seller.role !== 'ceo' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => toggleSeller(seller.id, seller.is_active)}
-                                >
-                                  {seller.is_active ? 'Деактивировать' : 'Активировать'}
-                                </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
+                            {s.telegram_id && (
+                              <p className="text-sm text-muted-foreground">TG: {s.telegram_id}</p>
+                            )}
+                            {s.email && <p className="text-xs text-muted-foreground">{s.email}</p>}
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => toggleSeller(s)}>
+                              {s.is_active ? <Icon name="UserX" size={14} /> : <Icon name="UserCheck" size={14} />}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => deleteSeller(s.id)} className="text-red-500 hover:text-red-600">
+                              <Icon name="Trash2" size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
