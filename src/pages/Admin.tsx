@@ -22,10 +22,10 @@ const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb56211
 const Admin = () => {
   const { user, isAdmin, token, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<any>(null);
-  const [users, setUsers] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [pendingItems] = useState<any[]>([]);
+  const [stats, setStats] = useState<Record<string, unknown>>(null!);
+  const [users, setUsers] = useState<Record<string, unknown>[]>([]);
+  const [recentActivity, setRecentActivity] = useState<Record<string, unknown>[]>([]);
+  const [pendingItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
@@ -299,6 +299,10 @@ const Admin = () => {
 
           <TabsContent value="content" className="space-y-6">
             <AdminContent stats={stats} />
+          </TabsContent>
+
+          <TabsContent value="sellers" className="space-y-6">
+            <AdminSellers />
           </TabsContent>
 
           <TabsContent value="moderation" className="space-y-6">
