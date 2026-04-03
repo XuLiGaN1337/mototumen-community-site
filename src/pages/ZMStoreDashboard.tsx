@@ -20,6 +20,7 @@ interface Product {
   inStock: boolean;
   brand: string;
   model: string;
+  discount: number;
 }
 
 interface Seller {
@@ -167,13 +168,20 @@ const ZMStoreDashboard = () => {
                   <div className="grid gap-3">
                     {products.map((p) => (
                       <div key={p.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-accent/5 transition-colors">
-                        {p.image ? (
-                          <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
-                        ) : (
-                          <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                            <Icon name="Package" size={24} className="text-muted-foreground" />
-                          </div>
-                        )}
+                        <div className="relative flex-shrink-0">
+                          {p.image ? (
+                            <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded-md" />
+                          ) : (
+                            <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
+                              <Icon name="Package" size={24} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          {p.discount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                              -{p.discount}%
+                            </span>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-semibold truncate">{p.name}</h3>
@@ -183,7 +191,18 @@ const ZMStoreDashboard = () => {
                           </div>
                           <p className="text-sm text-muted-foreground truncate">{p.brand} {p.model}</p>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="font-bold text-accent">{Number(p.price).toLocaleString("ru-RU")} ₽</span>
+                            {p.discount > 0 ? (
+                              <>
+                                <span className="font-bold text-red-500">
+                                  {Math.round(Number(p.price) * (1 - p.discount / 100)).toLocaleString("ru-RU")} ₽
+                                </span>
+                                <span className="text-xs text-muted-foreground line-through">
+                                  {Number(p.price).toLocaleString("ru-RU")} ₽
+                                </span>
+                              </>
+                            ) : (
+                              <span className="font-bold text-accent">{Number(p.price).toLocaleString("ru-RU")} ₽</span>
+                            )}
                             {p.category && <span className="text-xs bg-secondary px-2 py-0.5 rounded">{p.category}</span>}
                           </div>
                         </div>

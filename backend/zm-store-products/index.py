@@ -86,7 +86,7 @@ def handler(event: dict, context) -> dict:
             shop_id = get_zm_shop_id(cur)
             cur.execute(f"""
                 SELECT id, name, description, price, image_url as image,
-                       category, in_stock as "inStock", brand, model, created_at
+                       category, in_stock as "inStock", brand, model, discount, created_at
                 FROM {SCHEMA}.products WHERE shop_id = %s AND in_stock = true
                 ORDER BY created_at DESC
             """, (shop_id,))
@@ -118,7 +118,7 @@ def handler(event: dict, context) -> dict:
                 if pid:
                     cur.execute(f"""
                         SELECT id, name, description, price, image_url as image,
-                               category, in_stock as "inStock", brand, model, created_at
+                               category, in_stock as "inStock", brand, model, discount, created_at
                         FROM {SCHEMA}.products WHERE id = %s AND shop_id = %s
                     """, (pid, shop_id))
                     row = cur.fetchone()
@@ -128,7 +128,7 @@ def handler(event: dict, context) -> dict:
                 else:
                     cur.execute(f"""
                         SELECT id, name, description, price, image_url as image,
-                               category, in_stock as "inStock", brand, model, created_at
+                               category, in_stock as "inStock", brand, model, discount, created_at
                         FROM {SCHEMA}.products WHERE shop_id = %s
                         ORDER BY created_at DESC
                     """, (shop_id,))
@@ -138,14 +138,15 @@ def handler(event: dict, context) -> dict:
                 b = json.loads(event.get('body', '{}'))
                 if not b.get('name') or b.get('price') is None:
                     return err('name и price обязательны')
+                discount = max(0, min(100, int(b.get('discount', 0) or 0)))
                 cur.execute(f"""
                     INSERT INTO {SCHEMA}.products
-                    (name, description, price, image_url, category, in_stock, brand, model, shop_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+                    (name, description, price, image_url, category, in_stock, brand, model, discount, shop_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
                 """, (
                     b.get('name'), b.get('description', ''), b.get('price'),
                     b.get('image', ''), b.get('category', ''), b.get('inStock', True),
-                    b.get('brand', ''), b.get('model', ''), shop_id
+                    b.get('brand', ''), b.get('model', ''), discount, shop_id
                 ))
                 new_id = cur.fetchone()['id']
                 conn.commit()
@@ -156,15 +157,16 @@ def handler(event: dict, context) -> dict:
                 if not pid:
                     return err('id обязателен')
                 b = json.loads(event.get('body', '{}'))
+                discount = max(0, min(100, int(b.get('discount', 0) or 0)))
                 cur.execute(f"""
                     UPDATE {SCHEMA}.products
                     SET name=%s, description=%s, price=%s, image_url=%s,
-                        category=%s, in_stock=%s, brand=%s, model=%s, updated_at=NOW()
+                        category=%s, in_stock=%s, brand=%s, model=%s, discount=%s, updated_at=NOW()
                     WHERE id=%s AND shop_id=%s
                 """, (
                     b.get('name'), b.get('description', ''), b.get('price'),
                     b.get('image', ''), b.get('category', ''), b.get('inStock', True),
-                    b.get('brand', ''), b.get('model', ''), pid, shop_id
+                    b.get('brand', ''), b.get('model', ''), discount, pid, shop_id
                 ))
                 conn.commit()
                 return ok({'success': True})
