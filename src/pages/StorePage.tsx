@@ -8,6 +8,7 @@ import StoreFilters from '@/components/store/StoreFilters';
 import ProductCard from '@/components/store/ProductCard';
 import CartSidebar from '@/components/store/CartSidebar';
 import CheckoutModal, { CheckoutData } from '@/components/store/CheckoutModal';
+import AdminCard from '@/components/store/AdminCard';
 
 interface Product {
   id: string;
@@ -283,6 +284,9 @@ const StorePage: React.FC = () => {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {hasStoreAccess && (
+                  <AdminCard />
+                )}
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
