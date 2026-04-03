@@ -1,0 +1,2 @@
+ALTER TABLE t_p21120869_mototumen_community_.users ADD COLUMN IF NOT EXISTS vk_id VARCHAR(50);
+CREATE INDEX IF NOT EXISTS idx_users_vk_id ON t_p21120869_mototumen_community_.users(vk_id) WHERE vk_id IS NOT NULL;
