@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "GET events",
+      "method": "GET",
+      "path": "/?section=events",
+      "expectedStatus": 200
+    },
+    {
+      "name": "GET history",
+      "method": "GET",
+      "path": "/?section=history",
+      "expectedStatus": 200
+    }
+  ]
+}
