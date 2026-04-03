@@ -19,6 +19,7 @@ interface Product {
   in_stock: boolean;
   brand: string;
   model: string;
+  stock_quantity: number;
 }
 
 interface Shop {
@@ -45,7 +46,8 @@ const SellerDashboard = () => {
     category: '',
     brand: '',
     model: '',
-    in_stock: true
+    in_stock: true,
+    stock_quantity: 0,
   });
 
   useEffect(() => {
@@ -159,7 +161,8 @@ const SellerDashboard = () => {
       category: product.category || '',
       brand: product.brand || '',
       model: product.model || '',
-      in_stock: product.in_stock
+      in_stock: product.in_stock,
+      stock_quantity: product.stock_quantity || 0,
     });
     setIsAddingNew(false);
   };
@@ -175,7 +178,8 @@ const SellerDashboard = () => {
       category: '',
       brand: '',
       model: '',
-      in_stock: true
+      in_stock: true,
+      stock_quantity: 0,
     });
   };
 
@@ -244,14 +248,26 @@ const SellerDashboard = () => {
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
               />
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.in_stock}
-                  onChange={(e) => setFormData({ ...formData, in_stock: e.target.checked })}
-                />
-                В наличии
-              </label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.in_stock}
+                    onChange={(e) => setFormData({ ...formData, in_stock: e.target.checked })}
+                  />
+                  В наличии
+                </label>
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-sm text-muted-foreground whitespace-nowrap">Кол-во (шт.):</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={formData.stock_quantity}
+                    onChange={(e) => setFormData({ ...formData, stock_quantity: Math.max(0, parseInt(e.target.value) || 0) })}
+                  />
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveProduct}>Сохранить</Button>
                 <Button variant="outline" onClick={resetForm}>Отмена</Button>
@@ -273,9 +289,17 @@ const SellerDashboard = () => {
               <h3 className="font-bold text-lg mb-2">{product.name}</h3>
               <p className="text-sm text-muted-foreground mb-2">{product.description}</p>
               <p className="text-xl font-bold mb-2">{product.price} ₽</p>
-              <div className="flex gap-2 text-sm mb-4">
+              <div className="flex gap-2 text-sm mb-2 flex-wrap">
                 {product.brand && <span className="text-muted-foreground">{product.brand}</span>}
                 {product.model && <span className="text-muted-foreground">{product.model}</span>}
+              </div>
+              <div className="flex items-center gap-2 mb-4 text-sm">
+                <span className={product.in_stock ? "text-green-600 font-medium" : "text-red-500"}>
+                  {product.in_stock ? "В наличии" : "Нет в наличии"}
+                </span>
+                {product.stock_quantity > 0 && (
+                  <span className="text-muted-foreground">— {product.stock_quantity} шт.</span>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => startEdit(product)}>

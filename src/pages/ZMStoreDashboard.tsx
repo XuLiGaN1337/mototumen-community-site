@@ -21,6 +21,7 @@ interface Product {
   brand: string;
   model: string;
   discount: number;
+  stockQuantity: number;
 }
 
 interface Seller {
@@ -194,6 +195,9 @@ const ZMStoreDashboard = () => {
                             <Badge variant={p.inStock ? "default" : "secondary"} className="text-xs">
                               {p.inStock ? "В наличии" : "Нет в наличии"}
                             </Badge>
+                            {p.stockQuantity > 0 && (
+                              <span className="text-xs text-muted-foreground">{p.stockQuantity} шт.</span>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground truncate">{p.brand} {p.model}</p>
                           <div className="flex items-center gap-3 mt-1">

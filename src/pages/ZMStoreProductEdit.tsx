@@ -31,6 +31,7 @@ interface ProductForm {
   brand: string;
   model: string;
   discount: number;
+  stockQuantity: number;
 }
 
 const ZMStoreProductEdit = () => {
@@ -43,7 +44,7 @@ const ZMStoreProductEdit = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm>({
     name: "", description: "", price: 0, image: "",
-    category: CATEGORIES[0], inStock: true, brand: "", model: "", discount: 0,
+    category: CATEGORIES[0], inStock: true, brand: "", model: "", discount: 0, stockQuantity: 0,
   });
 
   const isEdit = productId && productId !== "new";
@@ -66,7 +67,7 @@ const ZMStoreProductEdit = () => {
             price: p.price || 0, image: p.image || "",
             category: p.category || CATEGORIES[0],
             inStock: p.inStock ?? true, brand: p.brand || "", model: p.model || "",
-            discount: p.discount ?? 0,
+            discount: p.discount ?? 0, stockQuantity: p.stockQuantity ?? 0,
           });
           if (p.image) setImagePreview(p.image);
         }
@@ -198,11 +199,19 @@ const ZMStoreProductEdit = () => {
                   <CardDescription>Установите цену и скидку в процентах</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Цена (₽) *</Label>
-                    <Input id="price" type="number" value={form.price}
-                      onChange={e => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-                      placeholder="2500" min="0" step="1" required />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Цена (₽) *</Label>
+                      <Input id="price" type="number" value={form.price}
+                        onChange={e => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
+                        placeholder="2500" min="0" step="1" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="stockQuantity">Кол-во в наличии</Label>
+                      <Input id="stockQuantity" type="number" value={form.stockQuantity}
+                        onChange={e => setForm({ ...form, stockQuantity: Math.max(0, parseInt(e.target.value) || 0) })}
+                        placeholder="0" min="0" step="1" />
+                    </div>
                   </div>
 
                   {/* Скидка */}
@@ -280,6 +289,9 @@ const ZMStoreProductEdit = () => {
                         className={form.inStock ? "text-green-500" : "text-red-500"} />
                       {form.inStock ? "В наличии" : "Нет в наличии"}
                     </Label>
+                    {form.inStock && form.stockQuantity > 0 && (
+                      <span className="ml-auto text-xs text-muted-foreground">{form.stockQuantity} шт.</span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
