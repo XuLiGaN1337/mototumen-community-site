@@ -49,8 +49,8 @@ const ZMStoreProductEdit = () => {
   const isEdit = productId && productId !== "new";
 
   useEffect(() => {
-    if (isEdit) loadProduct();
-  }, [productId]);
+    if (isEdit && token) loadProduct();
+  }, [productId, token]);
 
   const loadProduct = async () => {
     if (!token) return;

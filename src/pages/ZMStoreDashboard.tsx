@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -37,14 +37,20 @@ interface Seller {
 
 const ZMStoreDashboard = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCEO, setIsCEO] = useState(false);
+  const checked = useRef(false);
 
-  useEffect(() => { checkAccess(); }, [token]);
+  useEffect(() => {
+    if (authLoading) return;
+    if (checked.current) return;
+    checked.current = true;
+    checkAccess();
+  }, [authLoading, token]);
 
   const h = () => ({ "X-Auth-Token": token || "" });
 
@@ -111,7 +117,7 @@ const ZMStoreDashboard = () => {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Icon name="Loader2" className="h-8 w-8 animate-spin text-accent" />
