@@ -111,13 +111,6 @@ const Header: React.FC<HeaderProps> = () => {
             >
               События
             </a>
-            <a
-              href="/gymkhana"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              Джимхана
-            </a>
-
             {/* Dropdown Menu for "Полезное" */}
             <div className="relative group">
               <button className="text-gray-300 hover:text-[#004488] transition-colors flex items-center">
@@ -125,6 +118,12 @@ const Header: React.FC<HeaderProps> = () => {
                 <Icon name="ChevronDown" className="h-4 w-4 ml-1" />
               </button>
               <div className="absolute top-full left-0 mt-2 bg-dark-800 border border-dark-600 rounded-md shadow-lg z-50 min-w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <a
+                  href="/gymkhana"
+                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
+                >
+                  Мотоджимхана
+                </a>
                 <a
                   href="/ads"
                   className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
@@ -297,7 +296,6 @@ const Header: React.FC<HeaderProps> = () => {
                 { href: "/service", label: "Сервис", icon: "Wrench" },
                 { href: "/schools", label: "Мотошколы", icon: "GraduationCap" },
                 { href: "/events", label: "События", icon: "Calendar" },
-                { href: "/gymkhana", label: "Джимхана", icon: "Flag" },
                 { href: "/users", label: "Участники", icon: "Users" },
               ].map((item) => (
                 <a
@@ -315,6 +313,7 @@ const Header: React.FC<HeaderProps> = () => {
               <div className="border-t border-dark-700 mt-1 pt-1">
                 <p className="px-4 py-2 text-xs text-gray-500 uppercase tracking-wider">Полезное</p>
                 {[
+                  { href: "/gymkhana", label: "Мотоджимхана", icon: "Flag" },
                   { href: "/ads", label: "Объявления", icon: "FileText" },
                   { href: "/emergency", label: "Экстренная помощь", icon: "AlertTriangle" },
                   { href: "/help", label: "Помощь на дороге", icon: "LifeBuoy" },
