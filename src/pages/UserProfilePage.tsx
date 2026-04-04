@@ -264,7 +264,7 @@ export const UserProfilePage: React.FC = () => {
                     className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
+                    <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">
                       Участник с {new Date(profile.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
                     <h1 className="text-lg sm:text-2xl font-semibold text-white leading-tight truncate">
@@ -312,18 +312,18 @@ export const UserProfilePage: React.FC = () => {
                     className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
                   >
                     <div className="text-lg sm:text-xl font-bold text-white">{friendsCount}</div>
-                    <div className="text-[11px] text-gray-500">Друзей</div>
+                    <div className="text-xs text-gray-500">Друзей</div>
                   </button>
                   <button
                     onClick={() => setActiveTab('garage')}
                     className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
                   >
                     <div className="text-lg sm:text-xl font-bold text-white">{vehicles.length}</div>
-                    <div className="text-[11px] text-gray-500">Техника</div>
+                    <div className="text-xs text-gray-500">Техника</div>
                   </button>
                   <div className="bg-[#1e2332] rounded-lg p-2.5 text-center">
                     <div className="text-lg sm:text-xl font-bold text-white">{favoritesCount}</div>
-                    <div className="text-[11px] text-gray-500">Избранное</div>
+                    <div className="text-xs text-gray-500">Избранное</div>
                   </div>
                 </div>
 

@@ -32,7 +32,7 @@ const StatsSection: React.FC = () => {
   return (
     <section className="relative pt-0 pb-6 sm:pb-8 md:pb-16 px-4">
       <div className="container mx-auto relative z-10">
-        <div className="grid grid-cols-4 gap-2 sm:gap-6 md:gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
           {statsData.map((stat, index) => (
             <div key={index} className="text-center animate-scale-in">
               <div
@@ -41,7 +41,7 @@ const StatsSection: React.FC = () => {
               >
                 {stat.value}
               </div>
-              <div className="text-zinc-400 text-[10px] sm:text-sm md:text-base leading-tight">
+              <div className="text-zinc-400 text-xs sm:text-sm md:text-base leading-tight">
                 {stat.label}
               </div>
             </div>

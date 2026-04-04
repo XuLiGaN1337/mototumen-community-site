@@ -49,7 +49,7 @@ const Emergency = () => {
                     <span className="text-foreground">{service.name}</span>
                     <a 
                       href={`tel:${service.number}`}
-                      className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-red-500 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+                      className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-500 to-red-500 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
                     >
                       {service.number}
                     </a>

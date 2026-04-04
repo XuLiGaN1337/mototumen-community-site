@@ -152,7 +152,7 @@ const Events = () => {
             Главные события
           </h2>
           {/* Слайдер — полноэкранный на мобилке, 3D на десктопе */}
-          <div className="relative h-[280px] sm:h-[380px] md:h-[450px] flex items-center justify-center overflow-hidden">
+          <div className="relative h-[220px] sm:h-[340px] md:h-[450px] flex items-center justify-center overflow-hidden">
             <div className="relative w-full h-full flex items-center justify-center">
               {featuredEvents.map((event, index) => {
                 const position = (index - currentSlide + featuredEvents.length) % featuredEvents.length;
@@ -178,7 +178,7 @@ const Events = () => {
                       if (isNext) nextSlide();
                     }}
                   >
-                    <div className="relative h-[260px] sm:h-[340px] md:h-[400px] rounded-xl overflow-hidden shadow-2xl">
+                    <div className="relative h-[200px] sm:h-[300px] md:h-[400px] rounded-xl overflow-hidden shadow-2xl">
                       <img
                         src={event.image}
                         alt={event.title}

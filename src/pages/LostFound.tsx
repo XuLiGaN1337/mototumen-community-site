@@ -152,7 +152,7 @@ const LostFound = () => {
   };
 
   const renderItems = (items: LostFoundItem[]) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {items.map((item) => (
         <Card
           key={item.id}
@@ -252,22 +252,22 @@ const LostFound = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
           <div>
             <h1
-              className="text-4xl font-bold mb-2"
+              className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2"
               style={{ fontFamily: "Oswald, sans-serif" }}
             >
               Потеряшки/Находки
             </h1>
             <p
-              className="text-muted-foreground"
+              className="text-sm text-muted-foreground"
               style={{ fontFamily: "Open Sans, sans-serif" }}
             >
               Помогаем найти потерянные вещи и вернуть находки владельцам
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button
               variant="outline"
               className="border-red-500 text-red-500 hover:bg-red-50"
@@ -282,7 +282,7 @@ const LostFound = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
           <div className="lg:col-span-1">
             <SearchFilter
               searchTerm={searchTerm}

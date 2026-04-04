@@ -118,7 +118,7 @@ const SchoolPageFilters: React.FC<SchoolPageFiltersProps> = ({
                 <DialogHeader>
                   <DialogTitle>Создать мотошколу</DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="name">Название</Label>
