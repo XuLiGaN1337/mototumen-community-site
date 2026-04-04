@@ -131,6 +131,12 @@ const Header: React.FC<HeaderProps> = () => {
                   Объявления
                 </a>
                 <a
+                  href="/pillion"
+                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
+                >
+                  🏍️ Ищу пилота / Двойку
+                </a>
+                <a
                   href="/lost-found"
                   className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
                 >
@@ -315,6 +321,7 @@ const Header: React.FC<HeaderProps> = () => {
                 {[
                   { href: "/gymkhana", label: "Мотоджимхана", icon: "Flag" },
                   { href: "/ads", label: "Объявления", icon: "FileText" },
+                  { href: "/pillion", label: "Ищу пилота / Двойку", icon: "Users" },
                   { href: "/emergency", label: "Экстренная помощь", icon: "AlertTriangle" },
                   { href: "/help", label: "Помощь на дороге", icon: "LifeBuoy" },
                 ].map((item) => (

@@ -42,6 +42,7 @@ import ZMStoreDashboard from "./pages/ZMStoreDashboard";
 import ZMStoreProductEdit from "./pages/ZMStoreProductEdit";
 import ZMStoreSellerAdd from "./pages/ZMStoreSellerAdd";
 import Gymkhana from "./pages/Gymkhana";
+import PillionPage from "./pages/PillionPage";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/service" element={<Service />} />
             <Route path="/ads" element={<Announcements />} />
             <Route path="/gymkhana" element={<Gymkhana />} />
+            <Route path="/pillion" element={<PillionPage />} />
             <Route path="/events" element={<Events />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/users" element={<UsersPage />} />

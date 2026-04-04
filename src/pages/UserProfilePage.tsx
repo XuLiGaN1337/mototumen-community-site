@@ -12,6 +12,7 @@ import { CallsignPlate } from "@/components/profile/CallsignPlate";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
+const PILLION_API = 'https://functions.poehali.dev/9c00014f-3839-44bc-900d-0a59358d4e97';
 
 interface UserProfile {
   id: number;
@@ -52,12 +53,15 @@ export const UserProfilePage: React.FC = () => {
   const { token, user: currentUser } = useAuth();
   const { toast } = useToast();
   const [roleChanging, setRoleChanging] = useState(false);
+  const [hasPilotCard, setHasPilotCard] = useState(false);
+  const [hasPassengerCard, setHasPassengerCard] = useState(false);
 
   const isCeo = currentUser?.role === 'ceo';
 
   useEffect(() => {
     if (userId) {
       loadProfile();
+      loadPillionCards();
     }
   }, [userId]);
 
@@ -93,6 +97,26 @@ export const UserProfilePage: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPillionCards = async () => {
+    if (!userId) return;
+    try {
+      const [pilotRes, passRes] = await Promise.all([
+        fetch(`${PILLION_API}?action=pilots&user_id=${userId}`),
+        fetch(`${PILLION_API}?action=passengers&user_id=${userId}`),
+      ]);
+      if (pilotRes.ok) {
+        const data = await pilotRes.json();
+        setHasPilotCard(Array.isArray(data) ? data.length > 0 : !!data);
+      }
+      if (passRes.ok) {
+        const data = await passRes.json();
+        setHasPassengerCard(Array.isArray(data) ? data.length > 0 : !!data);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -326,6 +350,30 @@ export const UserProfilePage: React.FC = () => {
                     <div className="text-xs text-gray-500">Избранное</div>
                   </div>
                 </div>
+
+                {/* Карточки пилота/двойки */}
+                {(hasPilotCard || hasPassengerCard) && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {hasPilotCard && (
+                      <a
+                        href={`/pillion?tab=pilots&user_id=${userId}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
+                      >
+                        <Icon name="Bike" size={13} />
+                        Карточка пилота
+                      </a>
+                    )}
+                    {hasPassengerCard && (
+                      <a
+                        href={`/pillion?tab=passengers&user_id=${userId}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-colors"
+                      >
+                        <Icon name="Users" size={13} />
+                        Карточка пассажира
+                      </a>
+                    )}
+                  </div>
+                )}
 
                 {/* CEO: смена роли */}
                 {isCeo && !isOwnProfile && (
