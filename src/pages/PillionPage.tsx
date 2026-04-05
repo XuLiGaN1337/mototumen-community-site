@@ -1204,9 +1204,12 @@ const PillionPage: React.FC = () => {
   const [showPassengerForm, setShowPassengerForm] = useState(false);
   const [showAuthWarn, setShowAuthWarn] = useState(false);
 
-  // Свои карточки
-  const myPilot = pilots.find((p) => p.user_id === user?.id);
-  const myPassenger = passengers.find((p) => p.user_id === user?.id);
+  // Свои карточки (включая скрытые)
+  const [myPilotCard, setMyPilotCard] = useState<Pilot | null>(null);
+  const [myPassengerCard, setMyPassengerCard] = useState<Passenger | null>(null);
+
+  const myPilot = myPilotCard ?? pilots.find((p) => p.user_id === user?.id);
+  const myPassenger = myPassengerCard ?? passengers.find((p) => p.user_id === user?.id);
 
   // ── Загрузка ──────────────────────────────────────────────
 
@@ -1241,6 +1244,18 @@ const PillionPage: React.FC = () => {
     loadPassengers();
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`${API_URL}?action=pilots&user_id=${user.id}`)
+      .then((r) => r.json())
+      .then((d) => setMyPilotCard(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
+      .catch(() => {});
+    fetch(`${API_URL}?action=passengers&user_id=${user.id}`)
+      .then((r) => r.json())
+      .then((d) => setMyPassengerCard(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
+      .catch(() => {});
+  }, [user?.id]);
+
   // ── Обработчики кнопки создания ───────────────────────────
 
   const handleCreateBtn = () => {
@@ -1259,10 +1274,22 @@ const PillionPage: React.FC = () => {
 
   const afterPilotSaved = () => {
     loadPilots();
+    if (user?.id) {
+      fetch(`${API_URL}?action=pilots&user_id=${user.id}`)
+        .then((r) => r.json())
+        .then((d) => setMyPilotCard(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
+        .catch(() => {});
+    }
   };
 
   const afterPassengerSaved = () => {
     loadPassengers();
+    if (user?.id) {
+      fetch(`${API_URL}?action=passengers&user_id=${user.id}`)
+        .then((r) => r.json())
+        .then((d) => setMyPassengerCard(Array.isArray(d) ? (d[0] ?? null) : (d ?? null)))
+        .catch(() => {});
+    }
   };
 
   // ── Обновить рейтинг после отзыва ─────────────────────────
@@ -1277,10 +1304,14 @@ const PillionPage: React.FC = () => {
   const btnLabel =
     tab === "pilots"
       ? myPilot
-        ? "Редактировать мою карточку"
+        ? myPilot.is_active
+          ? "Редактировать мою карточку"
+          : "⚠ Карточка скрыта — включить"
         : "Разместить карточку пилота"
       : myPassenger
-      ? "Редактировать мою карточку"
+      ? myPassenger.is_active
+        ? "Редактировать мою карточку"
+        : "⚠ Карточка скрыта — включить"
       : "Разместить карточку пассажира";
 
   return (
