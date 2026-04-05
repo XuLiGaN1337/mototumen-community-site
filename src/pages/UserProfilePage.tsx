@@ -9,6 +9,7 @@ import { GarageTab } from "@/components/profile/GarageTab";
 import { FriendsTab } from "@/components/profile/FriendsTab";
 import { getRoleEmoji } from "@/components/admin/RoleBadge";
 import { CallsignPlate } from "@/components/profile/CallsignPlate";
+import { PhotoGallery } from "@/components/profile/PhotoGallery";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
@@ -55,6 +56,7 @@ export const UserProfilePage: React.FC = () => {
   const [roleChanging, setRoleChanging] = useState(false);
   const [hasPilotCard, setHasPilotCard] = useState(false);
   const [hasPassengerCard, setHasPassengerCard] = useState(false);
+  const [photos, setPhotos] = useState<{id:number; photo_url:string; source:string; created_at:string}[]>([]);
 
   const isCeo = currentUser?.role === 'ceo';
 
@@ -62,6 +64,7 @@ export const UserProfilePage: React.FC = () => {
     if (userId) {
       loadProfile();
       loadPillionCards();
+      loadPhotos();
     }
   }, [userId]);
 
@@ -114,6 +117,21 @@ export const UserProfilePage: React.FC = () => {
       if (passRes.ok) {
         const data = await passRes.json();
         setHasPassengerCard(Array.isArray(data) ? data.length > 0 : !!data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadPhotos = async () => {
+    if (!userId || !token) return;
+    try {
+      const r = await fetch(`${AUTH_API}?action=photos&user_id=${userId}`, {
+        headers: { 'X-Auth-Token': token },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        setPhotos(d.photos || []);
       }
     } catch (e) {
       console.error(e);
@@ -467,9 +485,12 @@ export const UserProfilePage: React.FC = () => {
 
               <div className="p-4 sm:p-6">
                 {profile.bio ? (
-                  <p className="text-gray-300 text-sm sm:text-base leading-relaxed">{profile.bio}</p>
+                  <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-4">{profile.bio}</p>
                 ) : (
-                  <p className="text-gray-500 text-center py-8 text-sm">Пользователь пока не рассказал о себе</p>
+                  <p className="text-gray-500 text-center py-4 text-sm">Пользователь пока не рассказал о себе</p>
+                )}
+                {photos.length > 0 && (
+                  <PhotoGallery photos={photos} readonly={true} />
                 )}
               </div>
             </div>

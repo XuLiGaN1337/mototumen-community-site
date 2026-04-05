@@ -1296,7 +1296,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 return {'statusCode': 401, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Auth required'}), 'isBase64Encoded': False}
             
             if method == 'GET':
-                cur.execute(f"SELECT id, photo_url, source, created_at FROM user_photos WHERE user_id = {user['id']} ORDER BY created_at DESC")
+                view_user_id = query_params.get('user_id', user['id'])
+                cur.execute(f"SELECT id, photo_url, source, created_at FROM user_photos WHERE user_id = {view_user_id} ORDER BY created_at DESC")
                 photos = cur.fetchall()
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'photos': [dict(p) for p in photos]}, default=str), 'isBase64Encoded': False}
             
@@ -1335,8 +1336,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'photo_url required'}), 'isBase64Encoded': False}
                     cur.execute(f"SELECT COUNT(*) as cnt FROM user_photos WHERE user_id = {user['id']}")
                     cnt = cur.fetchone()
-                    if cnt and cnt['cnt'] >= 3:
-                        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Максимум 3 фото'}), 'isBase64Encoded': False}
+                    if cnt and cnt['cnt'] >= 20:
+                        return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Максимум 20 фото'}), 'isBase64Encoded': False}
                     cur.execute("INSERT INTO user_photos (user_id, photo_url, source) VALUES (%s, %s, 'upload') RETURNING id, photo_url, source, created_at", (user['id'], photo_url))
                     new_photo = cur.fetchone()
                     conn.commit()
