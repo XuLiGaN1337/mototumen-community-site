@@ -61,7 +61,7 @@ const VehicleDetailModal: React.FC<{
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="bg-zinc-950 border-zinc-700 text-white max-w-lg p-0 overflow-hidden max-h-[80vh]">
+        <DialogContent className="bg-zinc-950 border-zinc-700 text-white max-w-lg p-0 max-h-[80vh] overflow-visible">
           {/* Обёртка: фото + выезжающая панель */}
           <div className="relative w-full">
 
@@ -110,12 +110,12 @@ const VehicleDetailModal: React.FC<{
                     </div>
                   </div>
 
-                  {/* Кнопка открытия панели — слева по центру */}
+                  {/* Кнопка открытия панели — всегда видна слева */}
                   <button
                     onClick={() => setPanelOpen(v => !v)}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-r-xl px-1.5 py-4 transition-all z-10"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 bg-[#ff6b35] hover:bg-[#e55a24] rounded-r-xl px-1.5 py-4 transition-colors z-10 shadow-lg"
                   >
-                    <Icon name={panelOpen ? "ChevronLeft" : "ChevronRight"} size={16} className="text-white" />
+                    <Icon name="Info" size={15} className="text-white" />
                   </button>
 
                   {photos.length > 1 && (
@@ -153,9 +153,9 @@ const VehicleDetailModal: React.FC<{
                   </div>
                   <button
                     onClick={() => setPanelOpen(v => !v)}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-r-xl px-1.5 py-4 transition-all z-10"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 bg-[#ff6b35] hover:bg-[#e55a24] rounded-r-xl px-1.5 py-4 transition-colors z-10 shadow-lg"
                   >
-                    <Icon name={panelOpen ? "ChevronLeft" : "ChevronRight"} size={16} className="text-white" />
+                    <Icon name="Info" size={15} className="text-white" />
                   </button>
                 </>
               )}
@@ -166,10 +166,10 @@ const VehicleDetailModal: React.FC<{
               )}
             </div>
 
-            {/* Выезжающая панель слева */}
+            {/* Выезжающая панель — снаружи слева от модала */}
             <div
-              className={`absolute inset-y-0 left-0 w-64 bg-zinc-900/95 backdrop-blur-sm border-r border-zinc-700 flex flex-col transition-transform duration-300 z-20 ${
-                panelOpen ? "translate-x-0" : "-translate-x-full"
+              className={`absolute top-0 right-full h-full w-64 bg-zinc-900 border border-zinc-700 rounded-l-xl flex flex-col transition-all duration-300 z-20 shadow-2xl ${
+                panelOpen ? "opacity-100 translate-x-0" : "opacity-0 pointer-events-none translate-x-4"
               }`}
             >
               {/* Заголовок панели */}
