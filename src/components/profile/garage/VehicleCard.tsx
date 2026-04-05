@@ -113,7 +113,7 @@ const VehicleDetailModal: React.FC<{
                   {/* Кнопка открытия панели — всегда видна слева */}
                   <button
                     onClick={() => setPanelOpen(v => !v)}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 bg-accent hover:bg-accent/80 rounded-r-xl px-1.5 py-4 transition-colors z-10 shadow-lg"
+                    className="absolute -left-8 top-1/2 -translate-y-1/2 bg-accent hover:bg-accent/80 rounded-l-xl px-1.5 py-4 transition-colors z-10 shadow-lg"
                   >
                     <Icon name="Info" size={15} className="text-white" />
                   </button>
@@ -153,7 +153,7 @@ const VehicleDetailModal: React.FC<{
                   </div>
                   <button
                     onClick={() => setPanelOpen(v => !v)}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 bg-accent hover:bg-accent/80 rounded-r-xl px-1.5 py-4 transition-colors z-10 shadow-lg"
+                    className="absolute -left-8 top-1/2 -translate-y-1/2 bg-accent hover:bg-accent/80 rounded-l-xl px-1.5 py-4 transition-colors z-10 shadow-lg"
                   >
                     <Icon name="Info" size={15} className="text-white" />
                   </button>
