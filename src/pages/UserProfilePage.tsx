@@ -343,7 +343,7 @@ export const UserProfilePage: React.FC = () => {
                     className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
                   >
                     <div className="text-lg sm:text-xl font-bold text-white">{vehicles.length}</div>
-                    <div className="text-xs text-gray-500">Техника</div>
+                    <div className="text-xs text-gray-500">Гараж</div>
                   </button>
                   <div className="bg-[#1e2332] rounded-lg p-2.5 text-center">
                     <div className="text-lg sm:text-xl font-bold text-white">{favoritesCount}</div>
