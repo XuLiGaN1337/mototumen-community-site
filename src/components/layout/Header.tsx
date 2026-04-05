@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -77,43 +77,13 @@ const Header: React.FC<HeaderProps> = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4 lg:space-x-8">
-            <a
-              href="/"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              Главная
-            </a>
-            <a
-              href="/shop"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              Магазин
-            </a>
-            <a
-              href="/store"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              ZM STORE
-            </a>
-            <a
-              href="/service"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              Сервис
-            </a>
-            <a
-              href="/schools"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              Мотошколы
-            </a>
+            <Link to="/" className="text-gray-300 hover:text-[#004488] transition-colors">Главная</Link>
+            <Link to="/shop" className="text-gray-300 hover:text-[#004488] transition-colors">Магазин</Link>
+            <Link to="/store" className="text-gray-300 hover:text-[#004488] transition-colors">ZM STORE</Link>
+            <Link to="/service" className="text-gray-300 hover:text-[#004488] transition-colors">Сервис</Link>
+            <Link to="/schools" className="text-gray-300 hover:text-[#004488] transition-colors">Мотошколы</Link>
+            <Link to="/events" className="text-gray-300 hover:text-[#004488] transition-colors">События</Link>
 
-            <a
-              href="/events"
-              className="text-gray-300 hover:text-[#004488] transition-colors"
-            >
-              События
-            </a>
             {/* Dropdown Menu for "Полезное" */}
             <div className="relative group">
               <button className="text-gray-300 hover:text-[#004488] transition-colors flex items-center">
@@ -121,60 +91,15 @@ const Header: React.FC<HeaderProps> = () => {
                 <Icon name="ChevronDown" className="h-4 w-4 ml-1" />
               </button>
               <div className="absolute top-full left-0 mt-2 bg-dark-800 border border-dark-600 rounded-md shadow-lg z-50 min-w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <a
-                  href="/gymkhana"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Мотоджимхана
-                </a>
-                <a
-                  href="/ads"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Объявления
-                </a>
-                <a
-                  href="/pillion"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  🏍️ Ищу пилота / Двойку
-                </a>
-                <a
-                  href="/lost-found"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Потеряшки/Находки
-                </a>
-                <a
-                  href="/upcoming-events"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Ближайшие события
-                </a>
-                <a
-                  href="/emergency"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Экстренная помощь
-                </a>
-                <a
-                  href="/help"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Помощь на дороге
-                </a>
-                <a
-                  href="/map"
-                  className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600"
-                >
-                  Карта маршрутов
-                </a>
-                <a
-                  href="/become-organization"
-                  className="block px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-semibold hover:from-yellow-500 hover:to-yellow-400 transition-all"
-                >
-                  ✨ Стать организацией
-                </a>
+                <Link to="/gymkhana" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Мотоджимхана</Link>
+                <Link to="/ads" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Объявления</Link>
+                <Link to="/pillion" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">🏍️ Ищу пилота / Двойку</Link>
+                <Link to="/lost-found" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Потеряшки/Находки</Link>
+                <Link to="/upcoming-events" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Ближайшие события</Link>
+                <Link to="/emergency" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Экстренная помощь</Link>
+                <Link to="/help" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Помощь на дороге</Link>
+                <Link to="/map" className="block px-4 py-2 text-gray-300 hover:bg-[#004488] hover:text-white transition-colors border-b border-dark-600">Карта маршрутов</Link>
+                <Link to="/become-organization" className="block px-4 py-2 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white font-semibold hover:from-yellow-500 hover:to-yellow-400 transition-all">✨ Стать организацией</Link>
               </div>
             </div>
           </nav>
@@ -314,15 +239,15 @@ const Header: React.FC<HeaderProps> = () => {
                 { href: "/events", label: "События", icon: "Calendar" },
                 { href: "/users", label: "Участники", icon: "Users" },
               ].map((item) => (
-                <a
+                <Link
                   key={item.href}
-                  href={item.href}
+                  to={item.href}
                   className="flex items-center gap-3 py-3 px-4 text-gray-300 hover:text-white hover:bg-dark-800 active:bg-dark-700 transition-colors text-base"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <Icon name={item.icon as "Home"} className="h-5 w-5 text-[#004488] flex-shrink-0" />
                   {item.label}
-                </a>
+                </Link>
               ))}
 
               {/* Полезное — раздел */}
@@ -335,24 +260,24 @@ const Header: React.FC<HeaderProps> = () => {
                   { href: "/emergency", label: "Экстренная помощь", icon: "AlertTriangle" },
                   { href: "/help", label: "Помощь на дороге", icon: "LifeBuoy" },
                 ].map((item) => (
-                  <a
+                  <Link
                     key={item.href}
-                    href={item.href}
+                    to={item.href}
                     className="flex items-center gap-3 py-3 px-4 text-gray-300 hover:text-white hover:bg-dark-800 active:bg-dark-700 transition-colors text-base"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon name={item.icon as "FileText"} className="h-5 w-5 text-[#004488] flex-shrink-0" />
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
-                <a
-                  href="/become-organization"
+                <Link
+                  to="/become-organization"
                   className="flex items-center gap-3 py-3 px-4 text-yellow-400 hover:bg-dark-800 transition-colors text-base"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <Icon name="Star" className="h-5 w-5 flex-shrink-0" />
                   ✨ Стать организацией
-                </a>
+                </Link>
               </div>
 
               {/* Auth в мобильном меню */}
@@ -375,8 +300,8 @@ const Header: React.FC<HeaderProps> = () => {
                     <div className="min-w-0 flex-1">
                       <p className="text-white font-medium truncate">{user?.name}</p>
                       <div className="flex gap-3">
-                        <a href="/profile" className="text-sm text-[#004488] hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Профиль</a>
-                        <a href="/settings" className="text-sm text-gray-400 hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Настройки</a>
+                        <Link to="/profile" className="text-sm text-[#004488] hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Профиль</Link>
+                        <Link to="/settings" className="text-sm text-gray-400 hover:underline" onClick={() => setIsMobileMenuOpen(false)}>Настройки</Link>
                       </div>
                     </div>
                     <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg">

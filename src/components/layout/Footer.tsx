@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 
@@ -103,12 +104,9 @@ const Footer: React.FC = () => {
             >
               {serviceLinks.map((link) => (
                 <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="hover:text-accent transition-colors"
-                  >
+                  <Link to={link.href} className="hover:text-accent transition-colors">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -159,21 +157,13 @@ const Footer: React.FC = () => {
         {/* Legal Links & Copyright */}
         <div className="border-t border-zinc-800 mt-6 sm:mt-8 pt-5 sm:pt-6 space-y-3">
           <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-2 sm:gap-3 text-xs sm:text-sm text-zinc-400">
-            <a href="/docs" className="hover:text-accent transition-colors font-medium text-zinc-300">
-              Документация
-            </a>
+            <Link to="/docs" className="hover:text-accent transition-colors font-medium text-zinc-300">Документация</Link>
             <span className="hidden sm:inline text-zinc-700">•</span>
-            <a href="/privacy" className="hover:text-accent transition-colors">
-              Политика конфиденциальности
-            </a>
+            <Link to="/privacy" className="hover:text-accent transition-colors">Политика конфиденциальности</Link>
             <span className="hidden sm:inline text-zinc-700">•</span>
-            <a href="/terms" className="hover:text-accent transition-colors">
-              Пользовательское соглашение
-            </a>
+            <Link to="/terms" className="hover:text-accent transition-colors">Пользовательское соглашение</Link>
             <span className="hidden sm:inline text-zinc-700">•</span>
-            <a href="/disclaimer" className="hover:text-accent transition-colors">
-              Отказ от ответственности
-            </a>
+            <Link to="/disclaimer" className="hover:text-accent transition-colors">Отказ от ответственности</Link>
           </div>
           <p className="text-center text-xs sm:text-sm text-zinc-400" style={{ fontFamily: "Open Sans, sans-serif" }}>
             © 2024 МОТОТюмень. Все права защищены.
