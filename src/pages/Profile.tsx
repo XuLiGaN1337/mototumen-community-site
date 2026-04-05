@@ -136,20 +136,20 @@ const Profile = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCropSave = async (blob: Blob) => {
+  const handleCropSave = async (originalBlob: Blob, previewDataUrl: string) => {
     setCropperOpen(false);
-    const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
-    const previewUrl = URL.createObjectURL(blob);
-    setAvatarPreview(previewUrl);
-    setAvatarFile(file);
+    // показываем превью сразу
+    setAvatarPreview(previewDataUrl);
 
-    // Сразу загружаем и сохраняем аватар — не ждём кнопку "Сохранить"
+    // загружаем оригинал (не обрезанный) в S3
     try {
       setLoading(true);
-      const uploadResult = await uploadFile(file, { folder: 'avatars' });
+      const origFile = new File([originalBlob], "avatar_orig.jpg", { type: "image/jpeg" });
+      const uploadResult = await uploadFile(origFile, { folder: 'avatars' });
       if (!uploadResult) throw new Error('Не удалось загрузить аватар');
+      // сохраняем URL оригинала — при следующем кадрировании откроется он
+      setOriginalSrc(uploadResult.url);
       await updateProfile({ avatar_url: uploadResult.url });
-      setAvatarFile(null);
       toast({ title: "Аватар сохранён" });
     } catch (e) {
       toast({
