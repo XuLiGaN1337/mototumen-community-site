@@ -62,13 +62,13 @@ const VehicleDetailModal: React.FC<{
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden">
           {/* Фото */}
-          <div className="relative w-full h-56 bg-zinc-950">
+          <div className="relative w-full bg-zinc-950">
             {photos.length > 0 ? (
               <>
                 <img
                   src={photos[photoIdx]}
                   alt={`${vehicle.brand} ${vehicle.model}`}
-                  className="w-full h-full object-cover"
+                  className="w-full max-h-[70vh] object-contain"
                 />
                 {photos.length > 1 && (
                   <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
@@ -225,9 +225,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
         className="bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden hover:border-accent transition-colors aspect-square flex flex-col cursor-pointer"
         onClick={() => setDetailOpen(true)}
       >
-        <div className="relative w-full h-2/3">
+        <div className="relative w-full h-2/3 bg-zinc-900">
           {photos.length > 0 ? (
-            <img src={photos[0]} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
+            <img src={photos[0]} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-contain" />
           ) : (
             <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
               <Icon name={getVehicleIcon(vehicle.vehicle_type)} className="h-12 w-12 text-zinc-600" />
