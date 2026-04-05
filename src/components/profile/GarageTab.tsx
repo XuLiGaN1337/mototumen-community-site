@@ -7,6 +7,7 @@ import { Vehicle, AUTH_API, PROFILE_API } from "./garage/types";
 import { VehicleCard } from "./garage/VehicleCard";
 import { AddVehicleDialog } from "./garage/AddVehicleDialog";
 import { EditVehicleDialog } from "./garage/EditVehicleDialog";
+import { VehicleOwnersModal } from "./garage/VehicleOwnersModal";
 
 interface GarageTabProps {
   vehicles?: Vehicle[];
@@ -40,6 +41,7 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editVehicle, setEditVehicle] = useState<any>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [editPhotoFiles, setEditPhotoFiles] = useState<File[]>([]);
   const [editPhotoPreviews, setEditPhotoPreviews] = useState<string[]>([]);
 
@@ -335,21 +337,30 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
           <h3 className="text-lg sm:text-xl font-bold text-white">{readonly ? 'Гараж' : 'Мой гараж'}</h3>
           <p className="text-zinc-400 text-sm">Техника: {vehicles.length}</p>
         </div>
-        {!readonly && (
-          <AddVehicleDialog
-            isOpen={isAddDialogOpen}
-            setIsOpen={setIsAddDialogOpen}
-            newVehicle={newVehicle}
-            setNewVehicle={setNewVehicle}
-            photoPreviews={photoPreviews}
-            handlePhotoChange={handlePhotoChange}
-            removePhoto={removePhoto}
-            showAdditional={showAdditional}
-            setShowAdditional={setShowAdditional}
-            onAdd={addVehicle}
-            uploading={uploading}
-          />
-        )}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-600 text-gray-300 hover:text-white hover:border-orange-500/50 text-sm transition-colors"
+          >
+            <Icon name="Search" size={14} className="text-orange-400" />
+            Найти технику
+          </button>
+          {!readonly && (
+            <AddVehicleDialog
+              isOpen={isAddDialogOpen}
+              setIsOpen={setIsAddDialogOpen}
+              newVehicle={newVehicle}
+              setNewVehicle={setNewVehicle}
+              photoPreviews={photoPreviews}
+              handlePhotoChange={handlePhotoChange}
+              removePhoto={removePhoto}
+              showAdditional={showAdditional}
+              setShowAdditional={setShowAdditional}
+              onAdd={addVehicle}
+              uploading={uploading}
+            />
+          )}
+        </div>
       </div>
 
       <EditVehicleDialog
@@ -364,6 +375,11 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
         setShowAdditional={setShowAdditional}
         onUpdate={updateVehicle}
         uploading={uploading}
+      />
+
+      <VehicleOwnersModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
       />
 
       {vehicles.length === 0 ? (

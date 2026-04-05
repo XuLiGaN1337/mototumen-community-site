@@ -172,7 +172,7 @@ const VehicleDetailModal: React.FC<{
                 onClick={openOwnersSearch}
               >
                 <Icon name="Search" size={14} className="mr-1.5 text-orange-400" />
-                Найти технику
+                Найти другую технику
               </Button>
             </div>
 
