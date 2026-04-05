@@ -60,23 +60,60 @@ const VehicleDetailModal: React.FC<{
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden">
-          {/* Фото */}
-          <div className="relative w-full bg-zinc-950">
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden max-h-[90vh] flex flex-col">
+          {/* Фото с оверлеем */}
+          <div className="relative w-full bg-zinc-950 flex-shrink-0">
             {photos.length > 0 ? (
               <>
                 <img
                   src={photos[photoIdx]}
                   alt={`${vehicle.brand} ${vehicle.model}`}
-                  className="w-full max-h-[70vh] object-contain"
+                  className="w-full max-h-56 object-contain"
                 />
+                {/* Градиент снизу */}
+                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+
+                {/* Инфо поверх фото */}
+                <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 flex items-end justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Тип */}
+                    <span className="text-[10px] text-white/60 uppercase tracking-wide">{typeLabel}</span>
+                    {/* Марка */}
+                    <span className="bg-black/30 backdrop-blur-sm border border-white/10 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                      {vehicle.brand}
+                    </span>
+                    {/* Модель */}
+                    <span className="bg-black/30 backdrop-blur-sm border border-white/10 text-white/90 text-xs px-2.5 py-0.5 rounded-full">
+                      {vehicle.model}
+                    </span>
+                    {vehicle.year && (
+                      <span className="bg-black/20 backdrop-blur-sm border border-white/10 text-white/70 text-xs px-2 py-0.5 rounded-full">
+                        {vehicle.year}
+                      </span>
+                    )}
+                  </div>
+                  {/* Объём и мощность */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {vehicle.displacement && (
+                      <span className="bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 text-orange-300 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {vehicle.displacement} см³
+                      </span>
+                    )}
+                    {vehicle.power_hp && (
+                      <span className="bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 text-orange-300 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                        {vehicle.power_hp} л.с.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {photos.length > 1 && (
-                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                  <div className="absolute top-2 right-2 flex gap-1">
                     {photos.map((_, i) => (
                       <button
                         key={i}
                         onClick={() => setPhotoIdx(i)}
-                        className={`w-2 h-2 rounded-full transition-colors ${i === photoIdx ? "bg-white" : "bg-white/40"}`}
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === photoIdx ? "bg-white" : "bg-white/40"}`}
                       />
                     ))}
                   </div>
@@ -99,8 +136,8 @@ const VehicleDetailModal: React.FC<{
                 )}
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Icon name={getVehicleIcon(vehicle.vehicle_type)} size={64} className="text-zinc-700" />
+              <div className="w-full h-32 flex items-center justify-center">
+                <Icon name={getVehicleIcon(vehicle.vehicle_type)} size={48} className="text-zinc-700" />
               </div>
             )}
             {vehicle.is_primary && (
@@ -111,36 +148,14 @@ const VehicleDetailModal: React.FC<{
           </div>
 
           {/* Инфо */}
-          <div className="p-5 space-y-4">
-            <div>
-              <p className="text-gray-400 text-xs mb-0.5">{typeLabel}</p>
-              <h2 className="font-['Oswald'] text-2xl text-white">
-                {vehicle.brand} {vehicle.model}
-              </h2>
-              {vehicle.year && <p className="text-gray-400 text-sm">{vehicle.year} г.</p>}
-            </div>
-
-            {/* Характеристики */}
-            <div className="grid grid-cols-2 gap-2">
-              {vehicle.displacement ? (
-                <div className="bg-zinc-800 rounded-lg px-3 py-2">
-                  <p className="text-gray-500 text-xs">Объём</p>
-                  <p className="text-white text-sm font-medium">{vehicle.displacement} см³</p>
-                </div>
-              ) : null}
-              {vehicle.power_hp ? (
-                <div className="bg-zinc-800 rounded-lg px-3 py-2">
-                  <p className="text-gray-500 text-xs">Мощность</p>
-                  <p className="text-white text-sm font-medium">{vehicle.power_hp} л.с.</p>
-                </div>
-              ) : null}
-              {vehicle.mileage ? (
-                <div className="bg-zinc-800 rounded-lg px-3 py-2">
-                  <p className="text-gray-500 text-xs">Пробег</p>
-                  <p className="text-white text-sm font-medium">{vehicle.mileage.toLocaleString("ru-RU")} км</p>
-                </div>
-              ) : null}
-            </div>
+          <div className="p-4 space-y-3 overflow-y-auto flex-1">
+            {/* Пробег отдельно если есть */}
+            {vehicle.mileage ? (
+              <div className="bg-zinc-800 rounded-lg px-3 py-2 flex items-center justify-between">
+                <p className="text-gray-500 text-xs">Пробег</p>
+                <p className="text-white text-sm font-medium">{vehicle.mileage.toLocaleString("ru-RU")} км</p>
+              </div>
+            ) : null}
 
             {vehicle.modifications && (
               <div className="bg-zinc-800 rounded-lg px-3 py-2">
