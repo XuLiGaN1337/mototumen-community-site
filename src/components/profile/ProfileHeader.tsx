@@ -13,6 +13,7 @@ interface ProfileHeaderProps {
   onEdit: () => void;
   onLogout: () => void;
   onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onEditAvatar?: () => void;
   onRemoveAvatar?: () => void;
   getDefaultAvatar: (gender: string) => string;
   organization?: { id: number; name: string; category: string; type: string } | null;
@@ -27,6 +28,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onEdit,
   onLogout,
   onAvatarChange,
+  onEditAvatar,
   onRemoveAvatar,
   getDefaultAvatar,
   organization,
@@ -71,15 +73,26 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </label>
           )}
           {isEditing && (
-            <label className="absolute -bottom-1 -right-1 p-1.5 bg-orange-500 hover:bg-orange-600 rounded-full cursor-pointer transition-colors shadow-lg" title="Загрузить фото">
-              <Icon name="Camera" className="h-3.5 w-3.5 text-white" />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onAvatarChange}
-                className="hidden"
-              />
-            </label>
+            <div className="absolute -bottom-1 -right-1 flex gap-1">
+              {(avatarPreview || hasCustomAvatar) && onEditAvatar && (
+                <button
+                  onClick={onEditAvatar}
+                  className="p-1.5 bg-zinc-700 hover:bg-zinc-600 rounded-full transition-colors shadow-lg"
+                  title="Кадрировать"
+                >
+                  <Icon name="Crop" className="h-3.5 w-3.5 text-white" />
+                </button>
+              )}
+              <label className="p-1.5 bg-orange-500 hover:bg-orange-600 rounded-full cursor-pointer transition-colors shadow-lg" title="Загрузить новое фото">
+                <Icon name="Camera" className="h-3.5 w-3.5 text-white" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={onAvatarChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
           )}
           {hasCustomAvatar && !isEditing && onRemoveAvatar && (
             <button

@@ -141,6 +141,13 @@ const Profile = () => {
     setAvatarPreview(URL.createObjectURL(blob));
   };
 
+  const handleEditExistingAvatar = () => {
+    const src = avatarPreview || user?.avatar_url;
+    if (!src) return;
+    setCropperSrc(src);
+    setCropperOpen(true);
+  };
+
   const getDefaultAvatar = (gender: string) => {
     return gender === 'female' 
       ? '/img/323010ec-ee00-4bf5-b69e-88189dbc69e9.jpg'
@@ -333,6 +340,7 @@ const Profile = () => {
                   onEdit={() => setIsEditing(true)}
                   onLogout={logout}
                   onAvatarChange={handleAvatarChange}
+                  onEditAvatar={handleEditExistingAvatar}
                   getDefaultAvatar={getDefaultAvatar}
                   organization={profileData?.organization}
                 />
