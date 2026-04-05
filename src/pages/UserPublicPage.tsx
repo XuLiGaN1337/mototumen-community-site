@@ -44,7 +44,18 @@ const UserPublicPage: React.FC = () => {
         if (r.status === 404) { setNotFound(true); return null; }
         return r.json();
       })
-      .then(data => { if (data && !data.error) setProfile(data); else if (data?.error) setNotFound(true); })
+      .then(data => {
+        if (data && !data.error) {
+          setProfile(data);
+          // Если зашли по числовому id, а у пользователя есть custom_id — заменяем URL
+          const canonical = data.custom_id || String(data.id);
+          if (canonical !== id) {
+            navigate(`/u/${canonical}`, { replace: true });
+          }
+        } else if (data?.error) {
+          setNotFound(true);
+        }
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id]);
