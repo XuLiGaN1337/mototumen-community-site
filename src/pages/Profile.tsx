@@ -138,17 +138,18 @@ const Profile = () => {
 
   const handleCropSave = async (originalBlob: Blob, previewDataUrl: string) => {
     setCropperOpen(false);
-    // показываем превью сразу
     setAvatarPreview(previewDataUrl);
 
-    // загружаем оригинал (не обрезанный) в S3
+    // Сохраняем base64 оригинала для повторного кадрирования
+    const reader = new FileReader();
+    reader.onloadend = () => setOriginalSrc(reader.result as string);
+    reader.readAsDataURL(originalBlob);
+
     try {
       setLoading(true);
       const origFile = new File([originalBlob], "avatar_orig.jpg", { type: "image/jpeg" });
       const uploadResult = await uploadFile(origFile, { folder: 'avatars' });
       if (!uploadResult) throw new Error('Не удалось загрузить аватар');
-      // сохраняем URL оригинала — при следующем кадрировании откроется он
-      setOriginalSrc(uploadResult.url);
       await updateProfile({ avatar_url: uploadResult.url });
       toast({ title: "Аватар сохранён" });
     } catch (e) {
@@ -163,35 +164,46 @@ const Profile = () => {
   };
 
   const handleEditExistingAvatar = async () => {
-    const src = originalSrc || user?.avatar_url;
-    if (!src) return;
-
-    // Если уже base64 (только что загруженный файл) — открываем сразу
-    if (src.startsWith("data:")) {
-      setCropperSrc(src);
+    // Если есть локальный base64 оригинала — открываем сразу
+    if (originalSrc) {
+      setCropperSrc(originalSrc);
       setCropperOpen(true);
       return;
     }
 
-    // CDN URL — качаем через fetch и конвертируем в base64
-    // чтобы canvas не был "tainted" и toBlob() работал
-    try {
-      setLoading(true);
-      const res = await fetch(src);
-      const blob = await res.blob();
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCropperSrc(reader.result as string);
+    // Нет локального оригинала — нужно загрузить через img элемент и перегнать в base64
+    const src = user?.avatar_url;
+    if (!src) return;
+
+    setLoading(true);
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext("2d");
+        if (!ctx) { setLoading(false); return; }
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = c.toDataURL("image/jpeg", 0.95);
+        setOriginalSrc(dataUrl);
+        setCropperSrc(dataUrl);
         setCropperOpen(true);
+      } catch {
+        // CORS заблокировал canvas — открываем напрямую (превью сломается но хоть что-то)
+        setCropperSrc(src);
+        setCropperOpen(true);
+      } finally {
         setLoading(false);
-      };
-      reader.readAsDataURL(blob);
-    } catch {
-      // fallback — попробуем напрямую
+      }
+    };
+    img.onerror = () => {
       setCropperSrc(src);
       setCropperOpen(true);
       setLoading(false);
-    }
+    };
+    img.src = src + "?v=" + Date.now(); // cache-bust для CORS
   };
 
   const getDefaultAvatar = (gender: string) => {

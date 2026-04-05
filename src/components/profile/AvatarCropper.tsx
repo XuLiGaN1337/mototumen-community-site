@@ -146,36 +146,42 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({
 
   const handleSave = () => {
     const img = imgRef.current;
-    if (!img) return;
+    if (!img) { console.error("[Cropper] img not loaded"); return; }
 
-    try {
-      // Превью — то что видит пользователь в круге
-      const previewCanvas = document.createElement("canvas");
-      previewCanvas.width = SIZE;
-      previewCanvas.height = SIZE;
-      const pCtx = previewCanvas.getContext("2d");
-      if (!pCtx) return;
-      pCtx.beginPath();
-      pCtx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
-      pCtx.clip();
-      pCtx.drawImage(img, offset.x, offset.y, imgNaturalSize.w * scale, imgNaturalSize.h * scale);
+    // Превью — рисуем круговой кроп текущего положения
+    const previewCanvas = document.createElement("canvas");
+    previewCanvas.width = SIZE;
+    previewCanvas.height = SIZE;
+    const pCtx = previewCanvas.getContext("2d");
+    if (!pCtx) { console.error("[Cropper] no pCtx"); return; }
+    pCtx.beginPath();
+    pCtx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+    pCtx.clip();
+    pCtx.drawImage(img, offset.x, offset.y, imgNaturalSize.w * scale, imgNaturalSize.h * scale);
+
+    // Используем toBlob превью — это всегда работает т.к. imageSrc = base64
+    previewCanvas.toBlob((previewBlob) => {
+      if (!previewBlob) { console.error("[Cropper] previewBlob null"); return; }
+
       const previewDataUrl = previewCanvas.toDataURL("image/jpeg", 0.92);
 
-      // Оригинал — imageSrc уже base64, конвертируем обратно в blob
-      // без рисования в canvas (избегаем tainted canvas)
-      const base64 = imageSrc.includes(",") ? imageSrc.split(",")[1] : imageSrc;
-      const mimeMatch = imageSrc.match(/data:([^;]+);/);
-      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
-      const byteChars = atob(base64);
-      const byteArr = new Uint8Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) {
-        byteArr[i] = byteChars.charCodeAt(i);
+      // Оригинал из imageSrc (base64) → blob без canvas
+      if (!imageSrc.startsWith("data:")) {
+        // imageSrc не base64 — отдаём превью как оригинал (fallback)
+        onSave(previewBlob, previewDataUrl);
+        return;
       }
+
+      const parts = imageSrc.split(",");
+      const mimeMatch = parts[0].match(/data:([^;]+);/);
+      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const byteChars = atob(parts[1]);
+      const byteArr = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
       const origBlob = new Blob([byteArr], { type: mime });
+
       onSave(origBlob, previewDataUrl);
-    } catch (e) {
-      console.error("[AvatarCropper] handleSave error:", e);
-    }
+    }, "image/jpeg", 0.92);
   };
 
   return (
