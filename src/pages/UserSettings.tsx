@@ -6,8 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotification, SoundType, AppSettings } from '@/contexts/NotificationContext';
 import { AdminPasswordSettings } from '@/components/admin/AdminPasswordSettings';
 
-const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
-
 const SOUND_TYPES: { id: SoundType; label: string; emoji: string }[] = [
   { id: 'default', label: 'Стандартный', emoji: '🔔' },
   { id: 'soft',    label: 'Мягкий',      emoji: '🎵' },
@@ -19,11 +17,15 @@ const Toggle: React.FC<{
   onChange: (v: boolean) => void;
   label: string;
   description?: string;
-}> = ({ checked, onChange, label, description }) => (
+  icon?: string;
+}> = ({ checked, onChange, label, description, icon }) => (
   <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
-    <div>
-      <p className="text-sm font-medium text-white">{label}</p>
-      {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+    <div className="flex items-center gap-2.5 flex-1 min-w-0 mr-3">
+      {icon && <span className="text-base flex-shrink-0">{icon}</span>}
+      <div>
+        <p className="text-sm font-medium text-white">{label}</p>
+        {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
+      </div>
     </div>
     <button
       onClick={() => onChange(!checked)}
@@ -34,12 +36,22 @@ const Toggle: React.FC<{
   </div>
 );
 
-type Tab = 'account' | 'notifications' | 'sound' | 'admin';
+const SectionHeader: React.FC<{ emoji: string; title: string; subtitle?: string }> = ({ emoji, title, subtitle }) => (
+  <div className="flex items-center gap-2.5 mb-3">
+    <span className="text-lg">{emoji}</span>
+    <div>
+      <p className="text-sm font-semibold text-white">{title}</p>
+      {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
+    </div>
+  </div>
+);
+
+type Tab = 'account' | 'notifications' | 'admin';
 
 const UserSettings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, token, isAuthenticated, isAdmin } = useAuth();
-  const { settings, updateSettings, saveSettings, notify } = useNotification();
+  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { settings, updateSettings, saveSettings, notify, pushPermission, requestPush } = useNotification();
   const [activeTab, setActiveTab] = useState<Tab>('account');
   const [saved, setSaved] = useState(false);
 
@@ -66,11 +78,13 @@ const UserSettings: React.FC = () => {
     updateSettings({ sound: { ...settings.sound, [key]: val } });
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'account',       label: 'Аккаунт',      icon: 'User'    },
-    { id: 'notifications', label: 'Уведомления',  icon: 'Bell'    },
-    { id: 'sound',         label: 'Звук',         icon: 'Volume2' },
+    { id: 'account',       label: 'Аккаунт',      icon: 'User' },
+    { id: 'notifications', label: 'Уведомления',  icon: 'Bell' },
     ...(isAdmin ? [{ id: 'admin' as Tab, label: 'Пароль', icon: 'Lock' }] : []),
   ];
+
+  const pushBlocked = pushPermission === 'denied';
+  const pushGranted = pushPermission === 'granted';
 
   return (
     <div className="min-h-screen bg-[#1e2332]">
@@ -137,30 +151,82 @@ const UserSettings: React.FC = () => {
           </div>
         )}
 
-        {/* ── Уведомления ─────────────────────────────────── */}
+        {/* ── Уведомления + Звук ──────────────────────────── */}
         {activeTab === 'notifications' && (
           <div className="space-y-4">
+
+            {/* Push-уведомления */}
             <div className="bg-[#252836] rounded-xl p-5">
-              <p className="text-xs text-gray-500 mb-4 uppercase tracking-wide">Что получать</p>
-              <Toggle checked={settings.notifications.friendRequests} onChange={v => patchNotif('friendRequests', v)} label="Заявки в друзья" description="Когда кто-то добавляет вас" />
-              <Toggle checked={settings.notifications.newEvents}      onChange={v => patchNotif('newEvents', v)}      label="Новые события"     description="Анонсы мероприятий" />
-              <Toggle checked={settings.notifications.announcements}  onChange={v => patchNotif('announcements', v)}  label="Объявления"        description="Новые объявления сообщества" />
-              <Toggle checked={settings.notifications.systemMessages} onChange={v => patchNotif('systemMessages', v)} label="Системные"         description="Обновления и важная информация" />
-              {isAdmin && (
-                <Toggle checked={settings.notifications.adminAlerts} onChange={v => patchNotif('adminAlerts', v)} label="Админ-оповещения" description="Новые пользователи, заявки, запросы" />
+              <SectionHeader emoji="🔔" title="Push-уведомления" subtitle="Уведомления браузера даже когда вкладка закрыта" />
+              {pushBlocked ? (
+                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm">
+                  <Icon name="AlertTriangle" className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-red-400 font-medium">Заблокировано браузером</p>
+                    <p className="text-gray-500 text-xs mt-1">Разрешите уведомления вручную в настройках браузера (иконка замка в адресной строке)</p>
+                  </div>
+                </div>
+              ) : pushGranted ? (
+                <Toggle
+                  checked={settings.push.enabled}
+                  onChange={v => updateSettings({ push: { enabled: v } })}
+                  label="Включить push-уведомления"
+                  description="Браузер будет показывать уведомления"
+                  icon="🌐"
+                />
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500">Разрешите браузеру отправлять уведомления</p>
+                  <Button onClick={requestPush} variant="outline" className="w-full border-[#ff6b35]/40 text-[#ff6b35] hover:bg-[#ff6b35]/10 text-sm">
+                    <Icon name="Bell" className="h-4 w-4 mr-2" />
+                    Разрешить push-уведомления
+                  </Button>
+                </div>
               )}
             </div>
-            <Button onClick={handleSave} className="w-full bg-[#ff6b35] hover:bg-[#e55a24]">
-              {saved ? <><Icon name="Check" className="h-4 w-4 mr-2" />Сохранено</> : <><Icon name="Save" className="h-4 w-4 mr-2" />Сохранить</>}
-            </Button>
-          </div>
-        )}
 
-        {/* ── Звук ────────────────────────────────────────── */}
-        {activeTab === 'sound' && (
-          <div className="space-y-4">
-            <div className="bg-[#252836] rounded-xl p-5 space-y-5">
-              <Toggle checked={settings.sound.enabled} onChange={v => patchSound('enabled', v)} label="Звук уведомлений" />
+            {/* Профиль */}
+            <div className="bg-[#252836] rounded-xl p-5">
+              <SectionHeader emoji="👤" title="Профиль" subtitle="Активность связанная с вашим аккаунтом" />
+              <Toggle checked={settings.notifications.friendRequests} onChange={v => patchNotif('friendRequests', v)} label="Заявки в друзья" description="Когда кто-то хочет добавить вас" icon="🤝" />
+              <Toggle checked={settings.notifications.achievements}   onChange={v => patchNotif('achievements', v)}   label="Достижения"        description="Когда вы получаете новое достижение" icon="🏆" />
+              <Toggle checked={settings.notifications.badges}         onChange={v => patchNotif('badges', v)}         label="Значки"            description="Когда администратор выдаёт вам значок" icon="🎖️" />
+            </div>
+
+            {/* События */}
+            <div className="bg-[#252836] rounded-xl p-5">
+              <SectionHeader emoji="🏍" title="События" subtitle="Мероприятия и активности сообщества" />
+              <Toggle checked={settings.notifications.newEvents} onChange={v => patchNotif('newEvents', v)} label="Новые события"  description="Анонсы мероприятий платформы" icon="📅" />
+              <Toggle checked={settings.notifications.gymkhana}  onChange={v => patchNotif('gymkhana', v)}  label="Гимхана"        description="Соревнования и результаты" icon="🏁" />
+            </div>
+
+            {/* Объявления */}
+            <div className="bg-[#252836] rounded-xl p-5">
+              <SectionHeader emoji="📢" title="Объявления" subtitle="Мото-авито и поиск попутчиков" />
+              <Toggle checked={settings.notifications.announcements} onChange={v => patchNotif('announcements', v)} label="Объявления"          description="Новые объявления в мото-авито" icon="📋" />
+              <Toggle checked={settings.notifications.pillion}       onChange={v => patchNotif('pillion', v)}       label="Ищу пилота / двойку" description="Новые карточки поиска попутчиков" icon="🛵" />
+            </div>
+
+            {/* Магазин */}
+            <div className="bg-[#252836] rounded-xl p-5">
+              <SectionHeader emoji="🛒" title="ZM Store" subtitle="Уведомления о магазине" />
+              <Toggle checked={settings.notifications.storeUpdates} onChange={v => patchNotif('storeUpdates', v)} label="Новые товары" description="Когда появляются новые товары в магазине" icon="📦" />
+            </div>
+
+            {/* Система */}
+            <div className="bg-[#252836] rounded-xl p-5">
+              <SectionHeader emoji="⚙️" title="Система" subtitle="Служебные уведомления платформы" />
+              <Toggle checked={settings.notifications.systemMessages} onChange={v => patchNotif('systemMessages', v)} label="Системные" description="Обновления платформы и важная информация" icon="ℹ️" />
+              {isAdmin && (
+                <Toggle checked={settings.notifications.adminAlerts} onChange={v => patchNotif('adminAlerts', v)} label="Админ-оповещения" description="Новые пользователи, заявки на организацию" icon="🛡️" />
+              )}
+            </div>
+
+            {/* Звук */}
+            <div className="bg-[#252836] rounded-xl p-5 space-y-4">
+              <SectionHeader emoji="🔊" title="Звук" subtitle="Звуковые уведомления в приложении" />
+
+              <Toggle checked={settings.sound.enabled} onChange={v => patchSound('enabled', v)} label="Звук уведомлений" description="Воспроизводить звук при уведомлении" icon="🔔" />
 
               {settings.sound.enabled && (
                 <>
@@ -184,42 +250,39 @@ const UserSettings: React.FC = () => {
                         <button
                           key={s.id}
                           onClick={() => patchSound('soundType', s.id)}
-                          className={`flex-1 py-2.5 px-2 rounded-lg border text-sm transition-all ${
+                          className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-lg border text-xs transition-all ${
                             settings.sound.soundType === s.id
-                              ? 'border-[#ff6b35] bg-[#ff6b35]/10 text-[#ff6b35]'
-                              : 'border-white/10 text-gray-400 hover:border-white/20'
+                              ? 'bg-[#ff6b35]/15 border-[#ff6b35] text-[#ff6b35]'
+                              : 'border-white/10 text-gray-400 hover:border-white/20 hover:text-white'
                           }`}
                         >
-                          {s.emoji} {s.label}
+                          <span className="text-lg">{s.emoji}</span>
+                          {s.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <Button variant="outline" onClick={handleTestSound} className="w-full border-white/10 text-gray-300">
+                  <Button onClick={handleTestSound} variant="outline" className="w-full border-white/10 text-gray-300 hover:text-white text-sm">
                     <Icon name="Play" className="h-4 w-4 mr-2" />
-                    Тест звука
+                    Проверить звук
                   </Button>
                 </>
               )}
             </div>
 
             <Button onClick={handleSave} className="w-full bg-[#ff6b35] hover:bg-[#e55a24]">
-              {saved ? <><Icon name="Check" className="h-4 w-4 mr-2" />Сохранено</> : <><Icon name="Save" className="h-4 w-4 mr-2" />Сохранить</>}
+              {saved
+                ? <><Icon name="Check" className="h-4 w-4 mr-2" />Сохранено</>
+                : <><Icon name="Save" className="h-4 w-4 mr-2" />Сохранить настройки</>
+              }
             </Button>
           </div>
         )}
 
-        {/* ── Пароль администратора (только для adminов) ── */}
+        {/* ── Админ / Пароль ──────────────────────────────── */}
         {activeTab === 'admin' && isAdmin && (
-          <div className="bg-[#252836] rounded-xl p-5">
-            <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-              <Icon name="Lock" className="h-5 w-5 text-[#ff6b35]" />
-              Пароль администратора
-            </h2>
-            <p className="text-gray-500 text-sm mb-5">Смените пароль для входа в панель управления</p>
-            <AdminPasswordSettings adminApi={ADMIN_API} users={[]} onPasswordReset={() => {}} />
-          </div>
+          <AdminPasswordSettings />
         )}
       </div>
     </div>

@@ -3,19 +3,43 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 // ─── Типы ────────────────────────────────────────────────────────────────────
 
 export type SoundType = 'default' | 'soft' | 'bell';
-export type NotifyType = 'friend' | 'event' | 'announcement' | 'system' | 'admin';
+
+export type NotifyType =
+  | 'friend'        // Профиль: заявки в друзья
+  | 'achievement'   // Профиль: новое достижение
+  | 'badge'         // Профиль: новый значок
+  | 'event'         // События: анонсы мероприятий
+  | 'gymkhana'      // События: гимхана
+  | 'announcement'  // Объявления: новые объявления
+  | 'pillion'       // Объявления: ищу пилота/двойку
+  | 'store'         // Магазин: новый товар ZM Store
+  | 'system'        // Система: обновления, важная инфа
+  | 'admin';        // Система: только для админов
 
 export interface AppSettings {
   notifications: {
+    // Профиль
     friendRequests: boolean;
+    achievements: boolean;
+    badges: boolean;
+    // События
     newEvents: boolean;
+    gymkhana: boolean;
+    // Объявления
     announcements: boolean;
+    pillion: boolean;
+    // Магазин
+    storeUpdates: boolean;
+    // Система
     systemMessages: boolean;
-    adminAlerts: boolean;   // только для админов
+    adminAlerts: boolean;
+  };
+  push: {
+    enabled: boolean;        // браузерные push-уведомления
   };
   sound: {
     enabled: boolean;
-    volume: number;         // 0-100
+    volume: number;          // 0-100
     soundType: SoundType;
   };
 }
@@ -35,6 +59,8 @@ interface NotificationContextType {
   notifications: AppNotification[];
   notify: (type: NotifyType, title: string, message?: string) => void;
   dismissAll: () => void;
+  pushPermission: NotificationPermission | null;
+  requestPush: () => Promise<void>;
 }
 
 // ─── Дефолты ─────────────────────────────────────────────────────────────────
@@ -42,10 +68,18 @@ interface NotificationContextType {
 export const defaultSettings: AppSettings = {
   notifications: {
     friendRequests: true,
+    achievements: true,
+    badges: true,
     newEvents: true,
+    gymkhana: true,
     announcements: false,
+    pillion: false,
+    storeUpdates: false,
     systemMessages: true,
     adminAlerts: true,
+  },
+  push: {
+    enabled: false,
   },
   sound: {
     enabled: true,
@@ -54,13 +88,13 @@ export const defaultSettings: AppSettings = {
   },
 };
 
-const STORAGE_KEY = 'app_settings_v2';
+const STORAGE_KEY = 'app_settings_v3';
 
 // ─── Звук через Web Audio API ────────────────────────────────────────────────
 
 function playSound(type: SoundType, volume: number) {
   try {
-    const AudioCtx = (window.AudioContext || (window as unknown as {webkitAudioContext: typeof AudioContext}).webkitAudioContext);
+    const AudioCtx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
     const ctx = new AudioCtx();
     const gain = ctx.createGain();
     gain.gain.value = volume / 100;
@@ -70,7 +104,6 @@ function playSound(type: SoundType, volume: number) {
     osc.connect(gain);
 
     if (type === 'default') {
-      // Двойной бип
       osc.type = 'sine';
       osc.frequency.setValueAtTime(880, ctx.currentTime);
       osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
@@ -83,7 +116,6 @@ function playSound(type: SoundType, volume: number) {
       osc2.start(ctx.currentTime + 0.25);
       osc2.stop(ctx.currentTime + 0.4);
     } else if (type === 'soft') {
-      // Мягкий одиночный тон
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(523, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
@@ -91,7 +123,6 @@ function playSound(type: SoundType, volume: number) {
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.4);
     } else {
-      // Bell — затухающий колокол
       osc.type = 'sine';
       osc.frequency.setValueAtTime(1047, ctx.currentTime);
       gain.gain.setValueAtTime(volume / 100, ctx.currentTime);
@@ -103,6 +134,24 @@ function playSound(type: SoundType, volume: number) {
     setTimeout(() => ctx.close(), 1000);
   } catch {
     // Web Audio не поддерживается
+  }
+}
+
+// ─── Маппинг тип → ключ настройки ────────────────────────────────────────────
+
+function isAllowed(type: NotifyType, n: AppSettings['notifications']): boolean {
+  switch (type) {
+    case 'friend':       return n.friendRequests;
+    case 'achievement':  return n.achievements;
+    case 'badge':        return n.badges;
+    case 'event':        return n.newEvents;
+    case 'gymkhana':     return n.gymkhana;
+    case 'announcement': return n.announcements;
+    case 'pillion':      return n.pillion;
+    case 'store':        return n.storeUpdates;
+    case 'system':       return n.systemMessages;
+    case 'admin':        return n.adminAlerts;
+    default:             return true;
   }
 }
 
@@ -122,12 +171,24 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const s = localStorage.getItem(STORAGE_KEY);
-      if (s) return { ...defaultSettings, ...JSON.parse(s) };
+      if (s) {
+        const parsed = JSON.parse(s);
+        return {
+          ...defaultSettings,
+          ...parsed,
+          notifications: { ...defaultSettings.notifications, ...(parsed.notifications || {}) },
+          push: { ...defaultSettings.push, ...(parsed.push || {}) },
+          sound: { ...defaultSettings.sound, ...(parsed.sound || {}) },
+        };
+      }
     } catch (e) { console.warn('settings parse error', e); }
     return defaultSettings;
   });
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(
+    'Notification' in window ? Notification.permission : null
+  );
   const timerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
@@ -135,6 +196,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       ...prev,
       ...patch,
       notifications: { ...prev.notifications, ...(patch.notifications || {}) },
+      push: { ...prev.push, ...(patch.push || {}) },
       sound: { ...prev.sound, ...(patch.sound || {}) },
     }));
   }, []);
@@ -146,33 +208,29 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     });
   }, []);
 
+  const requestPush = useCallback(async () => {
+    if (!('Notification' in window)) return;
+    const result = await Notification.requestPermission();
+    setPushPermission(result);
+    if (result === 'granted') {
+      updateSettings({ push: { enabled: true } });
+    }
+  }, [updateSettings]);
+
   const notify = useCallback((type: NotifyType, title: string, message?: string) => {
-    // Проверяем настройки уведомлений
-    const n = settings.notifications;
-    const allowed =
-      (type === 'friend' && n.friendRequests) ||
-      (type === 'event' && n.newEvents) ||
-      (type === 'announcement' && n.announcements) ||
-      (type === 'system' && n.systemMessages) ||
-      (type === 'admin' && n.adminAlerts);
+    if (!isAllowed(type, settings.notifications)) return;
 
-    if (!allowed) return;
-
-    // Звук
     if (settings.sound.enabled) {
       playSound(settings.sound.soundType, settings.sound.volume);
     }
 
-    // Push-уведомление браузера (если разрешено)
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if (settings.push.enabled && 'Notification' in window && Notification.permission === 'granted') {
       new Notification(title, { body: message, icon: '/favicon.ico' });
     }
 
-    // In-app уведомление
     const id = `${Date.now()}-${Math.random()}`;
     setNotifications(prev => [{ id, type, title, message, at: Date.now() }, ...prev.slice(0, 19)]);
 
-    // Авто-скрыть через 5 сек
     const t = setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 5000);
@@ -185,15 +243,14 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     setNotifications([]);
   }, []);
 
-  // Запрашиваем разрешение на push при первой загрузке
+  // Следим за разрешением push
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    if (!('Notification' in window)) return;
+    setPushPermission(Notification.permission);
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ settings, updateSettings, saveSettings, notifications, notify, dismissAll }}>
+    <NotificationContext.Provider value={{ settings, updateSettings, saveSettings, notifications, notify, dismissAll, pushPermission, requestPush }}>
       {children}
       <NotificationToasts notifications={notifications} onDismiss={id => setNotifications(prev => prev.filter(n => n.id !== id))} />
     </NotificationContext.Provider>
@@ -203,11 +260,16 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 // ─── Toast компонент ──────────────────────────────────────────────────────────
 
 const TYPE_ICONS: Record<NotifyType, string> = {
-  friend: '👤',
-  event: '🏍',
+  friend:       '👤',
+  achievement:  '🏆',
+  badge:        '🎖️',
+  event:        '🏍',
+  gymkhana:     '🏁',
   announcement: '📢',
-  system: '⚙️',
-  admin: '🛡️',
+  pillion:      '🛵',
+  store:        '🛒',
+  system:       '⚙️',
+  admin:        '🛡️',
 };
 
 const NotificationToasts: React.FC<{
