@@ -61,6 +61,7 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperSrc, setCropperSrc] = useState<string>("");
+  const [originalSrc, setOriginalSrc] = useState<string>("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -124,11 +125,12 @@ const Profile = () => {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // сбрасываем input чтобы можно было выбрать тот же файл повторно
     e.target.value = "";
     const reader = new FileReader();
     reader.onloadend = () => {
-      setCropperSrc(reader.result as string);
+      const src = reader.result as string;
+      setOriginalSrc(src);
+      setCropperSrc(src);
       setCropperOpen(true);
     };
     reader.readAsDataURL(file);
@@ -142,7 +144,8 @@ const Profile = () => {
   };
 
   const handleEditExistingAvatar = () => {
-    const src = avatarPreview || user?.avatar_url;
+    // всегда кадрируем из оригинала — если есть загруженный, иначе из сохранённого
+    const src = originalSrc || user?.avatar_url;
     if (!src) return;
     setCropperSrc(src);
     setCropperOpen(true);
@@ -404,6 +407,7 @@ const Profile = () => {
             setIsEditing(false);
             setAvatarFile(null);
             setAvatarPreview(null);
+            setOriginalSrc("");
           }}
           onSave={handleSaveProfile}
           onChange={handleEditFormChange}
