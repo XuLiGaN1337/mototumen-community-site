@@ -54,54 +54,47 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </div>
 
       <div className="flex items-start gap-3 sm:gap-4 mb-4">
-        <div className="flex-shrink-0 flex flex-col items-center gap-2">
-          <div className="relative group">
+        <div className="flex-shrink-0">
+          <div className="relative group w-20 h-20 sm:w-24 sm:h-24">
             <img
               src={avatarPreview || user.avatar_url || getDefaultAvatar(editForm.gender)}
               alt={user.name}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-blue-500"
+              className="w-full h-full rounded-full object-cover ring-4 ring-blue-500"
             />
-          </div>
 
-          {/* Кнопки управления аватаром — всегда видны в режиме редактирования */}
-          {isEditing && (
-            <div className="flex gap-1.5">
-              {/* Кадрировать — только если есть аватар */}
-              {(avatarPreview || hasCustomAvatar) && onEditAvatar && (
-                <button
-                  type="button"
-                  onClick={onEditAvatar}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] transition-colors"
-                  title="Кадрировать аватар"
-                >
-                  <Icon name="Crop" size={11} />
-                  Кадр
-                </button>
-              )}
-              {/* Загрузить новое */}
-              <label className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-[10px] cursor-pointer transition-colors">
-                <Icon name="Camera" size={11} />
-                Фото
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onAvatarChange}
-                  className="hidden"
-                />
-              </label>
-              {/* Удалить */}
-              {hasCustomAvatar && onRemoveAvatar && (
-                <button
-                  type="button"
-                  onClick={onRemoveAvatar}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-700 hover:bg-red-600 text-white text-[10px] transition-colors"
-                  title="Удалить аватар"
-                >
-                  <Icon name="Trash2" size={11} />
-                </button>
-              )}
-            </div>
-          )}
+            {/* Левая половина — загрузить новое фото (зелёная) */}
+            <label
+              className="absolute inset-0 rounded-full cursor-pointer overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Загрузить фото"
+            >
+              {/* левый полукруг */}
+              <span className="absolute left-0 top-0 w-1/2 h-full flex flex-col items-center justify-center bg-green-500/80 hover:bg-green-500 transition-colors gap-0.5">
+                <Icon name="Camera" size={14} className="text-white" />
+                <span className="text-white text-[8px] font-semibold leading-none">Фото</span>
+              </span>
+              {/* правый полукруг — прозрачный, нужен чтобы label не перекрывал */}
+              <span className="absolute right-0 top-0 w-1/2 h-full" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onAvatarChange}
+                className="hidden"
+              />
+            </label>
+
+            {/* Правая половина — кадрировать (белая), только если есть аватар */}
+            {(avatarPreview || hasCustomAvatar) && onEditAvatar && (
+              <button
+                type="button"
+                onClick={onEditAvatar}
+                title="Кадрировать"
+                className="absolute right-0 top-0 w-1/2 h-full rounded-r-full flex flex-col items-center justify-center bg-white/80 hover:bg-white transition-colors gap-0.5 opacity-0 group-hover:opacity-100"
+              >
+                <Icon name="Crop" size={14} className="text-zinc-800" />
+                <span className="text-zinc-800 text-[8px] font-semibold leading-none">Кадр</span>
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex-1 pr-12 sm:pr-16 min-w-0">
           <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
