@@ -17,6 +17,7 @@ import { PhotoGallery } from "@/components/profile/PhotoGallery";
 import LinkedAccounts from "@/components/profile/LinkedAccounts";
 import CustomIdBlock from "@/components/profile/CustomIdBlock";
 import { AvatarCropper } from "@/components/profile/AvatarCropper";
+import { AchievementsSection } from "@/components/profile/AchievementsSection";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
@@ -424,6 +425,14 @@ const Profile = () => {
                   loading={loading}
                   uploading={uploadingMedia}
                 />
+
+                {user && (
+                  <AchievementsSection
+                    userId={user.id}
+                    token={token}
+                    isCeo={user.role === 'ceo'}
+                  />
+                )}
               </div>
 
               <div className="space-y-4">

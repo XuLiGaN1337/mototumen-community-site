@@ -141,12 +141,6 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
       </div>
 
-      {user.bio && (
-        <p className="text-gray-300 text-sm leading-relaxed bg-[#1e2332] rounded-lg p-3 mb-4">
-          {user.bio}
-        </p>
-      )}
-
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {user.phone && (
           <div className="bg-[#1e2332] rounded-lg p-3">
@@ -183,6 +177,15 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <p className="text-white font-mono text-sm">#{user.id}</p>
         </div>
       </div>
+
+      {user.bio && (
+        <div className="mt-3">
+          <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide">О себе</p>
+          <p className="text-gray-300 text-sm leading-relaxed bg-[#1e2332] rounded-lg p-3">
+            {user.bio}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

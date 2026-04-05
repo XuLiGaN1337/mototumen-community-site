@@ -10,6 +10,7 @@ import { FriendsTab } from "@/components/profile/FriendsTab";
 import { UserProfileCard } from "@/components/userProfile/UserProfileCard";
 import { UserProfileStats } from "@/components/userProfile/UserProfileStats";
 import { UserProfileTabs } from "@/components/userProfile/UserProfileTabs";
+import { AchievementsSection } from "@/components/profile/AchievementsSection";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 const ADMIN_API = 'https://functions.poehali.dev/f34bd996-f5f2-4c81-8b7b-fb5621187a7f';
@@ -298,11 +299,18 @@ export const UserProfilePage: React.FC = () => {
 
           <TabsContent value="profile" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <UserProfileCard
-                profile={profile}
-                photos={photos}
-                getDefaultAvatar={getDefaultAvatar}
-              />
+              <div className="space-y-4">
+                <UserProfileCard
+                  profile={profile}
+                  photos={photos}
+                  getDefaultAvatar={getDefaultAvatar}
+                />
+                <AchievementsSection
+                  userId={profile.id}
+                  token={token}
+                  isCeo={isCeo}
+                />
+              </div>
               <UserProfileStats
                 friendsCount={friendsCount}
                 vehiclesCount={vehicles.length}
@@ -324,6 +332,7 @@ export const UserProfilePage: React.FC = () => {
               />
             </div>
           </TabsContent>
+
 
           <TabsContent value="garage" className="mt-0">
             <div className="bg-[#252836] rounded-lg p-3 sm:p-6">

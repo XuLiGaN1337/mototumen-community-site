@@ -67,12 +67,6 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ profile, photo
           </div>
         </div>
 
-        {profile.bio && (
-          <p className="text-gray-300 text-sm leading-relaxed bg-[#1e2332] rounded-lg p-3 mb-4">
-            {profile.bio}
-          </p>
-        )}
-
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {profile.phone && (
             <div className="bg-[#1e2332] rounded-lg p-3">
@@ -93,6 +87,15 @@ export const UserProfileCard: React.FC<UserProfileCardProps> = ({ profile, photo
             </div>
           )}
         </div>
+
+        {profile.bio && (
+          <div className="mt-3">
+            <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide">О себе</p>
+            <p className="text-gray-300 text-sm leading-relaxed bg-[#1e2332] rounded-lg p-3">
+              {profile.bio}
+            </p>
+          </div>
+        )}
       </div>
 
       {photos.length > 0 && (
