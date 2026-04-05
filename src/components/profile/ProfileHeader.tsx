@@ -54,37 +54,34 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </div>
 
       <div className="flex items-start gap-3 sm:gap-4 mb-4">
-        <div className="relative group flex-shrink-0">
-          <img
-            src={avatarPreview || user.avatar_url || getDefaultAvatar(editForm.gender)}
-            alt={user.name}
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-blue-500"
-          />
+        <div className="flex-shrink-0 flex flex-col items-center gap-2">
+          <div className="relative group">
+            <img
+              src={avatarPreview || user.avatar_url || getDefaultAvatar(editForm.gender)}
+              alt={user.name}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-blue-500"
+            />
+          </div>
+
+          {/* Кнопки управления аватаром — всегда видны в режиме редактирования */}
           {isEditing && (
-            <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
-              <Icon name="Camera" className="h-5 w-5 text-white" />
-              <span className="text-white text-[9px] font-medium tracking-wide">Изменить</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onAvatarChange}
-                className="hidden"
-              />
-            </label>
-          )}
-          {isEditing && (
-            <div className="absolute -bottom-1 -right-1 flex gap-1">
+            <div className="flex gap-1.5">
+              {/* Кадрировать — только если есть аватар */}
               {(avatarPreview || hasCustomAvatar) && onEditAvatar && (
                 <button
+                  type="button"
                   onClick={onEditAvatar}
-                  className="p-1.5 bg-zinc-700 hover:bg-zinc-600 rounded-full transition-colors shadow-lg"
-                  title="Кадрировать"
+                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] transition-colors"
+                  title="Кадрировать аватар"
                 >
-                  <Icon name="Crop" className="h-3.5 w-3.5 text-white" />
+                  <Icon name="Crop" size={11} />
+                  Кадр
                 </button>
               )}
-              <label className="p-1.5 bg-orange-500 hover:bg-orange-600 rounded-full cursor-pointer transition-colors shadow-lg" title="Загрузить новое фото">
-                <Icon name="Camera" className="h-3.5 w-3.5 text-white" />
+              {/* Загрузить новое */}
+              <label className="flex items-center gap-1 px-2 py-1 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-[10px] cursor-pointer transition-colors">
+                <Icon name="Camera" size={11} />
+                Фото
                 <input
                   type="file"
                   accept="image/*"
@@ -92,16 +89,18 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                   className="hidden"
                 />
               </label>
+              {/* Удалить */}
+              {hasCustomAvatar && onRemoveAvatar && (
+                <button
+                  type="button"
+                  onClick={onRemoveAvatar}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-700 hover:bg-red-600 text-white text-[10px] transition-colors"
+                  title="Удалить аватар"
+                >
+                  <Icon name="Trash2" size={11} />
+                </button>
+              )}
             </div>
-          )}
-          {hasCustomAvatar && !isEditing && onRemoveAvatar && (
-            <button
-              onClick={onRemoveAvatar}
-              className="absolute -bottom-1 -right-1 p-1.5 bg-red-600 hover:bg-red-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Удалить аватар"
-            >
-              <Icon name="X" className="h-3 w-3 text-white" />
-            </button>
           )}
         </div>
         <div className="flex-1 pr-12 sm:pr-16 min-w-0">
