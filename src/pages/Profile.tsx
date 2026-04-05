@@ -162,12 +162,36 @@ const Profile = () => {
     }
   };
 
-  const handleEditExistingAvatar = () => {
-    // всегда кадрируем из оригинала — если есть загруженный, иначе из сохранённого
+  const handleEditExistingAvatar = async () => {
     const src = originalSrc || user?.avatar_url;
     if (!src) return;
-    setCropperSrc(src);
-    setCropperOpen(true);
+
+    // Если уже base64 (только что загруженный файл) — открываем сразу
+    if (src.startsWith("data:")) {
+      setCropperSrc(src);
+      setCropperOpen(true);
+      return;
+    }
+
+    // CDN URL — качаем через fetch и конвертируем в base64
+    // чтобы canvas не был "tainted" и toBlob() работал
+    try {
+      setLoading(true);
+      const res = await fetch(src);
+      const blob = await res.blob();
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCropperSrc(reader.result as string);
+        setCropperOpen(true);
+        setLoading(false);
+      };
+      reader.readAsDataURL(blob);
+    } catch {
+      // fallback — попробуем напрямую
+      setCropperSrc(src);
+      setCropperOpen(true);
+      setLoading(false);
+    }
   };
 
   const getDefaultAvatar = (gender: string) => {

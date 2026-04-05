@@ -31,7 +31,6 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({
 
   const initImage = useCallback(() => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.onload = () => {
       imgRef.current = img;
       const { naturalWidth: nw, naturalHeight: nh } = img;
