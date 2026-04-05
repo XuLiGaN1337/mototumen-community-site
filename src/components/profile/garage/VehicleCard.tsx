@@ -65,11 +65,13 @@ const VehicleDetailModal: React.FC<{
           <div className="relative w-full bg-zinc-950 flex-shrink-0">
             {photos.length > 0 ? (
               <>
-                <img
-                  src={photos[photoIdx]}
-                  alt={`${vehicle.brand} ${vehicle.model}`}
-                  className="w-full object-contain"
-                />
+                <div className="w-full aspect-[4/3] overflow-hidden">
+                  <img
+                    src={photos[photoIdx]}
+                    alt={`${vehicle.brand} ${vehicle.model}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 {/* Градиент снизу */}
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
 

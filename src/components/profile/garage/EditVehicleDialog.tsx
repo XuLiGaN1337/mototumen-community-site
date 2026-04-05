@@ -17,6 +17,7 @@ interface EditVehicleDialogProps {
   photoPreviews: string[];
   handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removePhoto: (index: number) => void;
+  addCroppedPhoto: (dataUrl: string) => void;
   showAdditional: boolean;
   setShowAdditional: (show: boolean) => void;
   onUpdate: () => void;
@@ -31,6 +32,7 @@ export const EditVehicleDialog: React.FC<EditVehicleDialogProps> = ({
   photoPreviews,
   handlePhotoChange,
   removePhoto,
+  addCroppedPhoto,
   showAdditional,
   setShowAdditional,
   onUpdate,
@@ -50,6 +52,7 @@ export const EditVehicleDialog: React.FC<EditVehicleDialogProps> = ({
               photoPreviews={photoPreviews}
               handlePhotoChange={handlePhotoChange}
               removePhoto={removePhoto}
+              addCroppedPhoto={addCroppedPhoto}
               showAdditional={showAdditional}
               setShowAdditional={setShowAdditional}
             />

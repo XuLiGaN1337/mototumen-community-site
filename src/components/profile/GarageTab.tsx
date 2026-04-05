@@ -77,36 +77,18 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      const totalPhotos = photoFiles.length + files.length;
-      const availableSlots = 5 - photoFiles.length;
-      
-      if (totalPhotos > 5) {
-        toast({
-          title: "Превышен лимит фото",
-          description: `Можно загрузить максимум 5 фото. Добавлено ${availableSlots} из ${files.length} выбранных.`,
-          variant: "destructive",
-        });
-      }
-      
-      const filesToAdd = files.slice(0, availableSlots);
-      const newFiles = [...photoFiles, ...filesToAdd];
-      setPhotoFiles(newFiles);
-      
-      const readers = filesToAdd.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
+  const handlePhotoChange = (_e: React.ChangeEvent<HTMLInputElement>) => {};
+
+  const addCroppedPhoto = (dataUrl: string) => {
+    if (photoPreviews.length >= 5) return;
+    // Конвертируем dataUrl в File для загрузки
+    fetch(dataUrl)
+      .then(r => r.blob())
+      .then(blob => {
+        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setPhotoFiles(prev => [...prev, file]);
+        setPhotoPreviews(prev => [...prev, dataUrl]);
       });
-      
-      Promise.all(readers).then(results => {
-        setPhotoPreviews([...photoPreviews, ...results]);
-      });
-    }
   };
 
   const removePhoto = (index: number) => {
@@ -217,36 +199,17 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
     setIsEditDialogOpen(true);
   };
 
-  const handleEditPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      const totalPhotos = editPhotoPreviews.length + editPhotoFiles.length + files.length;
-      const availableSlots = 5 - (editPhotoPreviews.length + editPhotoFiles.length);
-      
-      if (totalPhotos > 5) {
-        toast({
-          title: "Превышен лимит фото",
-          description: `Можно загрузить максимум 5 фото. Добавлено ${availableSlots} из ${files.length} выбранных.`,
-          variant: "destructive",
-        });
-      }
-      
-      const filesToAdd = files.slice(0, availableSlots);
-      const newFiles = [...editPhotoFiles, ...filesToAdd];
-      setEditPhotoFiles(newFiles);
-      
-      const readers = filesToAdd.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        });
+  const handleEditPhotoChange = (_e: React.ChangeEvent<HTMLInputElement>) => {};
+
+  const addCroppedEditPhoto = (dataUrl: string) => {
+    if (editPhotoPreviews.length >= 5) return;
+    fetch(dataUrl)
+      .then(r => r.blob())
+      .then(blob => {
+        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        setEditPhotoFiles(prev => [...prev, file]);
+        setEditPhotoPreviews(prev => [...prev, dataUrl]);
       });
-      
-      Promise.all(readers).then(results => {
-        setEditPhotoPreviews([...editPhotoPreviews, ...results]);
-      });
-    }
   };
 
   const removeEditPhoto = (index: number) => {
@@ -354,6 +317,7 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
               photoPreviews={photoPreviews}
               handlePhotoChange={handlePhotoChange}
               removePhoto={removePhoto}
+              addCroppedPhoto={addCroppedPhoto}
               showAdditional={showAdditional}
               setShowAdditional={setShowAdditional}
               onAdd={addVehicle}
@@ -371,6 +335,7 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
         photoPreviews={editPhotoPreviews}
         handlePhotoChange={handleEditPhotoChange}
         removePhoto={removeEditPhoto}
+        addCroppedPhoto={addCroppedEditPhoto}
         showAdditional={showAdditional}
         setShowAdditional={setShowAdditional}
         onUpdate={updateVehicle}
