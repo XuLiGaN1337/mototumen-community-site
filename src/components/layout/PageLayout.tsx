@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Header from "./Header";
 import Footer from "./Footer";
 import BackButton from "@/components/ui/BackButton";
 import AdminOverlay from "@/components/admin/AdminOverlay";
@@ -25,8 +24,6 @@ const PageLayout: React.FC<PageLayoutProps> = ({
 
   return (
     <div className={className}>
-      <Header />
-
       <main>
         {showBackButton && !isHomePage && (
           <div className="container mx-auto px-4 pt-6">

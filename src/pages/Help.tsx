@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
@@ -147,7 +146,6 @@ const Help = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-grow container mx-auto px-4 py-8 mt-16">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Заявка на помощь</h1>

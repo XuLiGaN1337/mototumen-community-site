@@ -5,9 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
-// TelegramAutoAuth removed — auth через бота
 import CookieConsent from "@/components/CookieConsent";
 import DiagonalRibbon from "@/components/DiagonalRibbon";
+import Header from "@/components/layout/Header";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -57,6 +57,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <Header />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/shop" element={<Shop />} />

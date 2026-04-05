@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import StoreHeader from '@/components/store/StoreHeader';
@@ -236,7 +235,6 @@ const StorePage: React.FC = () => {
   if (loading) {
     return (
       <>
-        <Header />
         <div className="min-h-screen bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950 flex items-center justify-center">
           <div className="text-white text-xl">Загрузка...</div>
         </div>
@@ -247,7 +245,6 @@ const StorePage: React.FC = () => {
 
   return (
     <>
-      <Header />
       <div className="min-h-screen bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
         <StoreHeader
           hasStoreAccess={hasStoreAccess}

@@ -14,6 +14,7 @@ import Icon from "@/components/ui/icon";
 import { UserProfile, useAuth } from "@/contexts/AuthContext";
 import { getRoleEmoji } from "@/components/admin/RoleBadge";
 import AuthModal from "@/components/AuthModal";
+import { useNotification } from "@/contexts/NotificationContext";
 
 type HeaderProps = object;
 
@@ -27,6 +28,8 @@ const Header: React.FC<HeaderProps> = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin, logout, token } = useAuth();
+  const { notifications, dismissAll } = useNotification();
+  const unreadCount = notifications.length;
   
   useEffect(() => {
     const checkOrganization = async () => {
@@ -184,13 +187,20 @@ const Header: React.FC<HeaderProps> = () => {
                 {/* User Avatar */}
                 <div 
                   className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer"
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  onClick={() => { setShowProfileMenu(!showProfileMenu); if (!showProfileMenu) dismissAll(); }}
                 >
-                  <img 
-                    src={user.avatar_url || getDefaultAvatar(user.gender)} 
-                    alt={user.name}
-                    className="w-8 h-8 rounded-full border-2 border-[#004488] object-cover"
-                  />
+                  <div className="relative flex-shrink-0">
+                    <img 
+                      src={user.avatar_url || getDefaultAvatar(user.gender)} 
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full border-2 border-[#004488] object-cover"
+                    />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   <div className="hidden sm:block">
                     <p className="text-sm font-medium text-white truncate max-w-24 flex items-center">
                       {user.name}{getRoleEmoji(user.role || 'user')}
