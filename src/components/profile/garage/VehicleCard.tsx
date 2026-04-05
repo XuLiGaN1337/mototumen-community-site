@@ -60,7 +60,7 @@ const VehicleDetailModal: React.FC<{
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden max-h-[90vh] flex flex-col">
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden max-h-[80vh] flex flex-col">
           {/* Фото с оверлеем */}
           <div className="relative w-full bg-zinc-950 flex-shrink-0">
             {photos.length > 0 ? (
