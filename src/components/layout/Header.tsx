@@ -237,7 +237,6 @@ const Header: React.FC<HeaderProps> = () => {
                 { href: "/service", label: "Сервис", icon: "Wrench" },
                 { href: "/schools", label: "Мотошколы", icon: "GraduationCap" },
                 { href: "/events", label: "События", icon: "Calendar" },
-                { href: "/users", label: "Участники", icon: "Users" },
               ].map((item) => (
                 <Link
                   key={item.href}
