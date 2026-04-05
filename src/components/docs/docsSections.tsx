@@ -185,6 +185,8 @@ export const sections: Section[] = [
               "Любое фото из галереи можно сделать аватаром одним нажатием",
               "Фотографии видны всем участникам в публичном профиле",
               "В «Гараже» добавляйте технику: марка, модель, год, фото (до 5 шт), пробег, мощность",
+              "При загрузке фото техники открывается редактор кадрирования — выбери нужную часть фото в рамке 4:3",
+              "Рамку кадрирования можно перетаскивать мышью или двигать кнопками-стрелками",
               "Техника из гаража видна другим участникам в вашем профиле",
             ],
           },
@@ -426,6 +428,108 @@ export const sections: Section[] = [
         ].map((item) => (
           <div key={item.title} className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-5 flex gap-4">
             <Icon name={item.icon as "Search"} size={20} className="text-accent flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-white mb-1">{item.title}</h3>
+              <p className="text-sm text-zinc-400">{item.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    id: "achievements",
+    icon: "Trophy",
+    title: "Достижения и значки",
+    content: (
+      <div className="space-y-4">
+        <p className="text-zinc-400">Система наград: автоматические достижения за активность на платформе и ручные значки от администрации.</p>
+
+        <div className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-5">
+          <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <span>🏆</span> Достижения
+          </h3>
+          <p className="text-sm text-zinc-400 mb-3">Выдаются автоматически при выполнении условий. Обновляются каждый раз при открытии профиля.</p>
+          <div className="space-y-2">
+            {[
+              { cat: "👥 Социальные", items: ["Первый друг — добавь первого друга", "Популярный — 10 друзей", "Звезда сообщества — 50 друзей"] },
+              { cat: "🏍 Гараж", items: ["Первая техника — добавь технику в гараж", "Коллекционер — 5 единиц техники", "Автопарк — 10 единиц техники"] },
+              { cat: "📅 Ветеранство", items: ["Ветеран — год на платформе", "Старожил — 3 года на платформе"] },
+            ].map(g => (
+              <div key={g.cat} className="bg-zinc-900/60 rounded-lg p-3">
+                <p className="text-xs font-semibold text-zinc-300 mb-1.5">{g.cat}</p>
+                <ul className="space-y-1">
+                  {g.items.map(i => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-zinc-400">
+                      <Icon name="Check" size={12} className="text-accent mt-0.5 flex-shrink-0" />
+                      {i}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-5">
+          <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <span>🎖️</span> Значки
+          </h3>
+          <p className="text-sm text-zinc-400 mb-3">Выдаются вручную CEO или администратором за особый вклад в сообщество.</p>
+          <div className="space-y-2">
+            {[
+              { name: "Организатор", desc: "За организацию мероприятий", color: "text-orange-400" },
+              { name: "Помощник", desc: "За помощь сообществу", color: "text-green-400" },
+              { name: "Эксперт", desc: "За вклад в развитие платформы", color: "text-blue-400" },
+              { name: "Модератор", desc: "Модератор платформы", color: "text-purple-400" },
+              { name: "Проверенный", desc: "Верифицированный участник", color: "text-yellow-400" },
+            ].map(b => (
+              <div key={b.name} className="flex items-center gap-3 bg-zinc-900/60 rounded-lg px-3 py-2">
+                <Icon name="Award" size={14} className={`flex-shrink-0 ${b.color}`} />
+                <div>
+                  <span className={`text-xs font-semibold ${b.color}`}>{b.name}</span>
+                  <span className="text-xs text-zinc-500 ml-2">{b.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500 mt-3">Значки отображаются в профиле пользователя под аватаром.</p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "notifications",
+    icon: "Bell",
+    title: "Уведомления",
+    content: (
+      <div className="space-y-4">
+        <p className="text-zinc-400">Гибкая система уведомлений — настраивай что получать, как и откуда.</p>
+
+        {[
+          {
+            icon: "Bell",
+            title: "Типы уведомлений",
+            text: "Уведомления разбиты по категориям: Профиль (заявки в друзья, достижения, значки), События (мероприятия, гимхана), Объявления (мото-авито, ищу пилота/двойку), ZM Store (новые товары), Система (обновления платформы, для админов — новые заявки и пользователи).",
+          },
+          {
+            icon: "Smartphone",
+            title: "Push-уведомления браузера",
+            text: "В настройках можно разрешить браузеру отправлять push-уведомления — они появятся даже если вкладка свёрнута. При первом включении браузер запросит разрешение. Если отклонил — разреши вручную через иконку замка в адресной строке.",
+          },
+          {
+            icon: "Volume2",
+            title: "Звуковые уведомления",
+            text: "Три типа звука: Стандартный (двойной бип), Мягкий (плавный тон), Тихий (затухающий колокол). Регулируй громкость ползунком. Кнопка «Проверить звук» — моментальный тест без ожидания уведомления.",
+          },
+          {
+            icon: "Settings",
+            title: "Где настраивать",
+            text: "Профиль → Настройки → вкладка «Уведомления». Каждый тип можно включить или отключить отдельно. Настройки сохраняются в браузере.",
+          },
+        ].map((item) => (
+          <div key={item.title} className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-5 flex gap-4">
+            <Icon name={item.icon as "Bell"} size={20} className="text-accent flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold text-white mb-1">{item.title}</h3>
               <p className="text-sm text-zinc-400">{item.text}</p>
