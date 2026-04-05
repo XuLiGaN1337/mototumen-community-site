@@ -68,7 +68,7 @@ const VehicleDetailModal: React.FC<{
                 <img
                   src={photos[photoIdx]}
                   alt={`${vehicle.brand} ${vehicle.model}`}
-                  className="w-full max-h-56 object-contain"
+                  className="w-full object-contain"
                 />
                 {/* Градиент снизу */}
                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
