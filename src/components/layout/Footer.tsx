@@ -8,10 +8,10 @@ interface FooterLink {
 }
 
 const serviceLinks: FooterLink[] = [
-  { href: "#shop", label: "Магазин" },
-  { href: "#service", label: "Сервис" },
-  { href: "#schools", label: "Мотошколы" },
-  { href: "#ads", label: "Объявления" },
+  { href: "/shop", label: "Магазин" },
+  { href: "/service", label: "Сервис" },
+  { href: "/schools", label: "Мотошколы" },
+  { href: "/ads", label: "Объявления" },
 ];
 
 const socialLinks = [
