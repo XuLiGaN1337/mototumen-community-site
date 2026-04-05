@@ -59,8 +59,20 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-blue-500"
           />
           {isEditing && (
-            <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+            <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
               <Icon name="Camera" className="h-5 w-5 text-white" />
+              <span className="text-white text-[9px] font-medium tracking-wide">Изменить</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onAvatarChange}
+                className="hidden"
+              />
+            </label>
+          )}
+          {isEditing && (
+            <label className="absolute -bottom-1 -right-1 p-1.5 bg-orange-500 hover:bg-orange-600 rounded-full cursor-pointer transition-colors shadow-lg" title="Загрузить фото">
+              <Icon name="Camera" className="h-3.5 w-3.5 text-white" />
               <input
                 type="file"
                 accept="image/*"

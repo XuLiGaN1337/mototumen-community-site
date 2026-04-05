@@ -16,6 +16,7 @@ import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { PhotoGallery } from "@/components/profile/PhotoGallery";
 import LinkedAccounts from "@/components/profile/LinkedAccounts";
 import CustomIdBlock from "@/components/profile/CustomIdBlock";
+import { AvatarCropper } from "@/components/profile/AvatarCropper";
 
 const AUTH_API = 'https://functions.poehali.dev/55efb6f4-b3ab-4ac3-8b19-da9b21b5490e';
 
@@ -58,6 +59,8 @@ const Profile = () => {
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState<string>("");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -120,17 +123,22 @@ const Profile = () => {
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log('[Profile] Выбран файл аватара:', file ? { name: file.name, size: file.size, type: file.type } : 'нет файла');
-    
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-        console.log('[Profile] Превью аватара создано');
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    // сбрасываем input чтобы можно было выбрать тот же файл повторно
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCropperSrc(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropSave = (blob: Blob) => {
+    setCropperOpen(false);
+    const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(blob));
   };
 
   const getDefaultAvatar = (gender: string) => {
@@ -371,6 +379,13 @@ const Profile = () => {
             <FriendsTab />
           </TabsContent>
         </Tabs>
+
+        <AvatarCropper
+          open={cropperOpen}
+          imageSrc={cropperSrc}
+          onClose={() => setCropperOpen(false)}
+          onSave={handleCropSave}
+        />
 
         <ProfileEditModal
           isOpen={isEditing}
