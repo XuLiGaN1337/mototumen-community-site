@@ -1215,6 +1215,87 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 conn.commit()
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Removed'}), 'isBase64Encoded': False}
         
+        # === ACHIEVEMENTS & BADGES ===
+        elif query_params.get('action') == 'achievements':
+            target_user_id = query_params.get('user_id') or (user and user['id'])
+            if not target_user_id:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'user_id required'}), 'isBase64Encoded': False}
+
+            if method == 'GET':
+                cur.execute(f"""
+                    SELECT a.id, a.name, a.description, a.icon, a.category,
+                           ua.earned_at
+                    FROM {SCHEMA}.achievements a
+                    LEFT JOIN {SCHEMA}.user_achievements ua
+                        ON ua.achievement_id = a.id AND ua.user_id = {target_user_id}
+                    ORDER BY a.category, a.id
+                """)
+                achievements = [dict(r) for r in cur.fetchall()]
+
+                cur.execute(f"""
+                    SELECT b.id, b.name, b.description, b.image_url, b.category,
+                           ub.earned_at
+                    FROM {SCHEMA}.badges b
+                    JOIN {SCHEMA}.user_badges ub ON ub.badge_id = b.id
+                    WHERE ub.user_id = {target_user_id}
+                    ORDER BY ub.earned_at DESC
+                """)
+                badges = [dict(r) for r in cur.fetchall()]
+
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'achievements': achievements, 'badges': badges}, default=str), 'isBase64Encoded': False}
+
+            if method == 'POST' and user and user.get('role') in ('ceo', 'admin'):
+                body = json.loads(event.get('body', '{}'))
+                badge_id = body.get('badge_id')
+                if not badge_id:
+                    return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'badge_id required'}), 'isBase64Encoded': False}
+                cur.execute(f"SELECT id FROM {SCHEMA}.user_badges WHERE user_id = {target_user_id} AND badge_id = {badge_id}")
+                if cur.fetchone():
+                    return {'statusCode': 409, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Значок уже выдан'}), 'isBase64Encoded': False}
+                cur.execute(f"INSERT INTO {SCHEMA}.user_badges (user_id, badge_id) VALUES ({target_user_id}, {badge_id})")
+                conn.commit()
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
+
+            if method == 'DELETE' and user and user.get('role') in ('ceo', 'admin'):
+                badge_id = query_params.get('badge_id')
+                if not badge_id:
+                    return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'badge_id required'}), 'isBase64Encoded': False}
+                cur.execute(f"DELETE FROM {SCHEMA}.user_badges WHERE user_id = {target_user_id} AND badge_id = {badge_id}")
+                conn.commit()
+                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
+
+            return {'statusCode': 405, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Forbidden'}), 'isBase64Encoded': False}
+
+        # === AUTO-GRANT ACHIEVEMENTS ===
+        elif query_params.get('action') == 'sync_achievements' and user:
+            uid = user['id']
+            cur.execute(f"SELECT COUNT(*) as cnt FROM {SCHEMA}.user_friends WHERE (user_id = {uid} OR friend_id = {uid}) AND status = 'accepted'")
+            friends_cnt = (cur.fetchone() or {}).get('cnt', 0)
+            cur.execute(f"SELECT COUNT(*) as cnt FROM {SCHEMA}.user_vehicles WHERE user_id = {uid}")
+            vehicles_cnt = (cur.fetchone() or {}).get('cnt', 0)
+            cur.execute(f"SELECT created_at FROM {SCHEMA}.users WHERE id = {uid}")
+            u_row = cur.fetchone()
+            days_since = (datetime.now() - u_row['created_at']).days if u_row and u_row.get('created_at') else 0
+
+            to_grant = []
+            if friends_cnt >= 1: to_grant.append(1)
+            if friends_cnt >= 10: to_grant.append(2)
+            if friends_cnt >= 50: to_grant.append(3)
+            if vehicles_cnt >= 1: to_grant.append(4)
+            if vehicles_cnt >= 5: to_grant.append(5)
+            if vehicles_cnt >= 10: to_grant.append(6)
+            if days_since >= 365: to_grant.append(9)
+            if days_since >= 1095: to_grant.append(10)
+
+            cur.execute(f"SELECT achievement_id FROM {SCHEMA}.user_achievements WHERE user_id = {uid}")
+            already = {r['achievement_id'] for r in cur.fetchall()}
+            new_grants = [a for a in to_grant if a not in already]
+            for ach_id in new_grants:
+                cur.execute(f"INSERT INTO {SCHEMA}.user_achievements (user_id, achievement_id) VALUES ({uid}, {ach_id})")
+            if new_grants:
+                conn.commit()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'granted': new_grants}), 'isBase64Encoded': False}
+
         # === PUBLIC PROFILES ===
         elif query_params.get('action') == 'public' or query_params.get('user_id'):
             user_id = query_params.get('user_id')
@@ -1410,89 +1491,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'message': 'Updated'}), 'isBase64Encoded': False}
         
-        # === ACHIEVEMENTS & BADGES ===
-        if query_params.get('action') == 'achievements':
-            target_user_id = query_params.get('user_id') or (user and user['id'])
-            if not target_user_id:
-                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'user_id required'}), 'isBase64Encoded': False}
-
-            if method == 'GET':
-                # Все достижения + отметка заработано ли
-                cur.execute(f"""
-                    SELECT a.id, a.name, a.description, a.icon, a.category,
-                           ua.earned_at
-                    FROM {SCHEMA}.achievements a
-                    LEFT JOIN {SCHEMA}.user_achievements ua
-                        ON ua.achievement_id = a.id AND ua.user_id = {target_user_id}
-                    ORDER BY a.category, a.id
-                """)
-                achievements = [dict(r) for r in cur.fetchall()]
-
-                # Значки пользователя
-                cur.execute(f"""
-                    SELECT b.id, b.name, b.description, b.image_url, b.category,
-                           ub.earned_at
-                    FROM {SCHEMA}.badges b
-                    JOIN {SCHEMA}.user_badges ub ON ub.badge_id = b.id
-                    WHERE ub.user_id = {target_user_id}
-                    ORDER BY ub.earned_at DESC
-                """)
-                badges = [dict(r) for r in cur.fetchall()]
-
-                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'achievements': achievements, 'badges': badges}, default=str), 'isBase64Encoded': False}
-
-            # CEO/admin: выдать значок пользователю
-            if method == 'POST' and user and user.get('role') in ('ceo', 'admin'):
-                body = json.loads(event.get('body', '{}'))
-                badge_id = body.get('badge_id')
-                if not badge_id:
-                    return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'badge_id required'}), 'isBase64Encoded': False}
-                cur.execute(f"SELECT id FROM {SCHEMA}.user_badges WHERE user_id = {target_user_id} AND badge_id = {badge_id}")
-                if cur.fetchone():
-                    return {'statusCode': 409, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'Значок уже выдан'}), 'isBase64Encoded': False}
-                cur.execute(f"INSERT INTO {SCHEMA}.user_badges (user_id, badge_id) VALUES ({target_user_id}, {badge_id})")
-                conn.commit()
-                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
-
-            # CEO/admin: забрать значок
-            if method == 'DELETE' and user and user.get('role') in ('ceo', 'admin'):
-                badge_id = query_params.get('badge_id')
-                if not badge_id:
-                    return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'badge_id required'}), 'isBase64Encoded': False}
-                cur.execute(f"DELETE FROM {SCHEMA}.user_badges WHERE user_id = {target_user_id} AND badge_id = {badge_id}")
-                conn.commit()
-                return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'success': True}), 'isBase64Encoded': False}
-
-        # === AUTO-GRANT ACHIEVEMENTS (вызывается при GET профиля) ===
-        if query_params.get('action') == 'sync_achievements' and user:
-            uid = user['id']
-            cur.execute(f"SELECT COUNT(*) as cnt FROM {SCHEMA}.user_friends WHERE (user_id = {uid} OR friend_id = {uid}) AND status = 'accepted'")
-            friends_cnt = (cur.fetchone() or {}).get('cnt', 0)
-            cur.execute(f"SELECT COUNT(*) as cnt FROM {SCHEMA}.user_vehicles WHERE user_id = {uid}")
-            vehicles_cnt = (cur.fetchone() or {}).get('cnt', 0)
-            cur.execute(f"SELECT created_at FROM {SCHEMA}.users WHERE id = {uid}")
-            u_row = cur.fetchone()
-            days_since = (datetime.now() - u_row['created_at']).days if u_row and u_row.get('created_at') else 0
-
-            to_grant = []
-            if friends_cnt >= 1: to_grant.append(1)
-            if friends_cnt >= 10: to_grant.append(2)
-            if friends_cnt >= 50: to_grant.append(3)
-            if vehicles_cnt >= 1: to_grant.append(4)
-            if vehicles_cnt >= 5: to_grant.append(5)
-            if vehicles_cnt >= 10: to_grant.append(6)
-            if days_since >= 365: to_grant.append(9)
-            if days_since >= 1095: to_grant.append(10)
-
-            cur.execute(f"SELECT achievement_id FROM {SCHEMA}.user_achievements WHERE user_id = {uid}")
-            already = {r['achievement_id'] for r in cur.fetchall()}
-            new_grants = [a for a in to_grant if a not in already]
-            for ach_id in new_grants:
-                cur.execute(f"INSERT INTO {SCHEMA}.user_achievements (user_id, achievement_id) VALUES ({uid}, {ach_id})")
-            if new_grants:
-                conn.commit()
-            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'granted': new_grants}), 'isBase64Encoded': False}
-
         return {
             'statusCode': 405,
             'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
