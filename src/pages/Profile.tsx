@@ -136,11 +136,30 @@ const Profile = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCropSave = (blob: Blob) => {
+  const handleCropSave = async (blob: Blob) => {
     setCropperOpen(false);
     const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+    const previewUrl = URL.createObjectURL(blob);
+    setAvatarPreview(previewUrl);
     setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(blob));
+
+    // Сразу загружаем и сохраняем аватар — не ждём кнопку "Сохранить"
+    try {
+      setLoading(true);
+      const uploadResult = await uploadFile(file, { folder: 'avatars' });
+      if (!uploadResult) throw new Error('Не удалось загрузить аватар');
+      await updateProfile({ avatar_url: uploadResult.url });
+      setAvatarFile(null);
+      toast({ title: "Аватар сохранён" });
+    } catch (e) {
+      toast({
+        title: "Ошибка сохранения аватара",
+        description: e instanceof Error ? e.message : "Попробуй ещё раз",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditExistingAvatar = () => {
@@ -175,20 +194,7 @@ const Profile = () => {
       
       console.log('[Profile] Подготовлены обновления:', updates);
       
-      if (avatarFile) {
-        console.log('[Profile] Загружаем аватар:', { name: avatarFile.name, size: avatarFile.size });
-        const uploadResult = await uploadFile(avatarFile, { 
-          folder: 'avatars' 
-        });
-        
-        if (uploadResult) {
-          console.log('[Profile] Аватар загружен успешно:', uploadResult.url);
-          updates.avatar_url = uploadResult.url;
-        } else {
-          console.error('[Profile] Ошибка: uploadFile вернул null');
-          throw new Error('Не удалось загрузить аватар');
-        }
-      }
+      // аватар сохраняется сразу в handleCropSave, здесь пропускаем
       
       console.log('[Profile] Отправляем запрос на обновление профиля');
       await updateProfile(updates);
