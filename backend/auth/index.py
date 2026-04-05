@@ -1390,7 +1390,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
                 if updates:
                     updates.append("updated_at = NOW()")
-                    cur.execute(f"UPDATE user_profiles SET {', '.join(updates)} WHERE user_id = {user['id']}")
+                    # UPSERT — создаёт профиль если его нет, иначе обновляет
+                    fields = [u.split(' = ')[0] for u in updates if u != "updated_at = NOW()"]
+                    vals_part = ', '.join(updates)
+                    cur.execute(f"""
+                        INSERT INTO user_profiles (user_id)
+                        VALUES ({user['id']})
+                        ON CONFLICT (user_id) DO NOTHING
+                    """)
+                    cur.execute(f"UPDATE user_profiles SET {vals_part} WHERE user_id = {user['id']}")
 
                 conn.commit()
 
