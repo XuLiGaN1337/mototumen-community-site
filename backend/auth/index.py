@@ -41,7 +41,7 @@ def get_header(headers: Dict[str, Any], name: str) -> Optional[str]:
 def get_user_from_token(cur, token: str) -> Optional[Dict]:
     cur.execute(
         f"""
-        SELECT u.id, u.email, u.name
+        SELECT u.id, u.email, u.name, u.role
         FROM users u
         JOIN user_sessions s ON u.id = s.user_id
         WHERE s.token = '{token}' AND s.expires_at > NOW()
