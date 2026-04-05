@@ -148,28 +148,34 @@ export const AvatarCropper: React.FC<AvatarCropperProps> = ({
     const img = imgRef.current;
     if (!img) return;
 
-    // 1. Превью — круговая обрезка для отображения в UI
-    const previewCanvas = document.createElement("canvas");
-    previewCanvas.width = SIZE;
-    previewCanvas.height = SIZE;
-    const pCtx = previewCanvas.getContext("2d");
-    if (!pCtx) return;
-    pCtx.beginPath();
-    pCtx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
-    pCtx.clip();
-    pCtx.drawImage(img, offset.x, offset.y, imgNaturalSize.w * scale, imgNaturalSize.h * scale);
-    const previewDataUrl = previewCanvas.toDataURL("image/jpeg", 0.92);
+    try {
+      // Превью — то что видит пользователь в круге
+      const previewCanvas = document.createElement("canvas");
+      previewCanvas.width = SIZE;
+      previewCanvas.height = SIZE;
+      const pCtx = previewCanvas.getContext("2d");
+      if (!pCtx) return;
+      pCtx.beginPath();
+      pCtx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+      pCtx.clip();
+      pCtx.drawImage(img, offset.x, offset.y, imgNaturalSize.w * scale, imgNaturalSize.h * scale);
+      const previewDataUrl = previewCanvas.toDataURL("image/jpeg", 0.92);
 
-    // 2. Оригинал — полное изображение без обрезки, для хранения
-    const origCanvas = document.createElement("canvas");
-    origCanvas.width = imgNaturalSize.w;
-    origCanvas.height = imgNaturalSize.h;
-    const oCtx = origCanvas.getContext("2d");
-    if (!oCtx) return;
-    oCtx.drawImage(img, 0, 0);
-    origCanvas.toBlob((blob) => {
-      if (blob) onSave(blob, previewDataUrl);
-    }, "image/jpeg", 0.95);
+      // Оригинал — imageSrc уже base64, конвертируем обратно в blob
+      // без рисования в canvas (избегаем tainted canvas)
+      const base64 = imageSrc.includes(",") ? imageSrc.split(",")[1] : imageSrc;
+      const mimeMatch = imageSrc.match(/data:([^;]+);/);
+      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const byteChars = atob(base64);
+      const byteArr = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteArr[i] = byteChars.charCodeAt(i);
+      }
+      const origBlob = new Blob([byteArr], { type: mime });
+      onSave(origBlob, previewDataUrl);
+    } catch (e) {
+      console.error("[AvatarCropper] handleSave error:", e);
+    }
   };
 
   return (
