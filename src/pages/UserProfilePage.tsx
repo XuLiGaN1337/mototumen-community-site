@@ -295,140 +295,182 @@ export const UserProfilePage: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-0">
+          {/* Табы — как в личном профиле */}
+          <div className="bg-[#252836] rounded-lg p-2 mb-4">
+            <TabsList className="grid w-full grid-cols-3 bg-[#1e2332]">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <Icon name="User" className="h-4 w-4 mr-2" />
+                Профиль
+              </TabsTrigger>
+              <TabsTrigger value="garage" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <Icon name="Car" className="h-4 w-4 mr-2" />
+                Гараж
+                {vehicles.length > 0 && (
+                  <span className="ml-2 bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {vehicles.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="friends" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <Icon name="Users" className="h-4 w-4 mr-2" />
+                Друзья
+                {friendsCount > 0 && (
+                  <span className="ml-2 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {friendsCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
           <TabsContent value="profile" className="mt-0">
-            <div className="bg-[#252836] rounded-lg overflow-hidden">
-              <div className="p-4 sm:p-6">
-                {/* Шапка профиля — горизонтальная на мобилке */}
-                <div className="flex items-start gap-4 mb-5">
-                  <img
-                    src={profile.avatar_url || getDefaultAvatar(profile.gender)}
-                    alt={profile.name}
-                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">
-                      Участник с {new Date(profile.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Левая колонка — шапка профиля */}
+              <div className="space-y-4">
+                <div className="bg-[#252836] rounded-lg p-3 sm:p-4">
+                  <div className="flex items-start gap-3 sm:gap-4 mb-4">
+                    <div className="flex-shrink-0">
+                      <img
+                        src={profile.avatar_url || getDefaultAvatar(profile.gender)}
+                        alt={profile.name}
+                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-gray-500 mb-1 uppercase tracking-wide">
+                        Участник с {new Date(profile.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </p>
+                      <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 truncate">
+                        {profile.name}
+                        <span className="ml-2 text-xl">{getRoleEmoji(profile.role || 'user')}</span>
+                      </h1>
+                      {profile.callsign && (
+                        <div className="mb-2">
+                          <CallsignPlate callsign={profile.callsign} region="72" size="sm" />
+                        </div>
+                      )}
+                      {telegramUsername && (
+                        <a
+                          href={`https://t.me/${telegramUsername}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1e2332] rounded-lg text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          <Icon name="Send" className="h-3 w-3" />
+                          @{telegramUsername.replace('@', '')}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {profile.bio && (
+                    <p className="text-gray-300 text-sm leading-relaxed bg-[#1e2332] rounded-lg p-3 mb-4">
+                      {profile.bio}
                     </p>
-                    <h1 className="text-lg sm:text-2xl font-semibold text-white leading-tight truncate">
-                      {profile.name}{getRoleEmoji(profile.role || 'user')}
-                    </h1>
-                    {profile.callsign && (
-                      <div className="mt-1">
-                        <CallsignPlate callsign={profile.callsign} region="72" size="sm" />
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    {profile.phone && (
+                      <div className="bg-[#1e2332] rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                          <Icon name="Phone" className="h-3 w-3" />
+                          <span>Телефон</span>
+                        </div>
+                        <p className="text-white font-medium text-sm">{profile.phone}</p>
                       </div>
                     )}
-                    {telegramUsername && (
-                      <Button
-                        onClick={() => window.open(`https://t.me/${telegramUsername}`, '_blank')}
-                        variant="ghost"
-                        size="sm"
-                        className="text-[#0088cc] hover:text-white hover:bg-[#1e2332] mt-1 px-2 h-7"
-                      >
-                        <Icon name="Send" className="h-3 w-3 mr-1" />
-                        Написать
-                      </Button>
+                    {profile.location && (
+                      <div className="bg-[#1e2332] rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
+                          <Icon name="MapPin" className="h-3 w-3" />
+                          <span>Локация</span>
+                        </div>
+                        <p className="text-white font-medium text-sm">{profile.location}</p>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Инфо — локация и телефон */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-sm text-gray-400">
-                  {profile.location && (
-                    <div className="flex items-center gap-1.5">
-                      <Icon name="MapPin" className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>{profile.location}</span>
-                    </div>
-                  )}
-                  {profile.phone && (
-                    <div className="flex items-center gap-1.5">
-                      <Icon name="Phone" className="h-3.5 w-3.5 flex-shrink-0" />
-                      <span>{profile.phone}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Статистика */}
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <button
-                    onClick={() => setActiveTab('friends')}
-                    className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
-                  >
-                    <div className="text-lg sm:text-xl font-bold text-white">{friendsCount}</div>
-                    <div className="text-xs text-gray-500">Друзей</div>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('garage')}
-                    className="bg-[#1e2332] rounded-lg p-2.5 text-center hover:bg-[#2a2e3f] transition-colors"
-                  >
-                    <div className="text-lg sm:text-xl font-bold text-white">{vehicles.length}</div>
-                    <div className="text-xs text-gray-500">Гараж</div>
-                  </button>
-                  <div className="bg-[#1e2332] rounded-lg p-2.5 text-center">
-                    <div className="text-lg sm:text-xl font-bold text-white">{favoritesCount}</div>
-                    <div className="text-xs text-gray-500">Избранное</div>
-                  </div>
-                </div>
-
-                {/* Карточки пилота/двойки */}
-                {(hasPilotCard || hasPassengerCard) && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {hasPilotCard && (
-                      <a
-                        href={`/pillion?tab=pilots&user_id=${userId}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
-                      >
-                        <Icon name="Bike" size={13} />
-                        Карточка пилота
-                      </a>
-                    )}
-                    {hasPassengerCard && (
-                      <a
-                        href={`/pillion?tab=passengers&user_id=${userId}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-colors"
-                      >
-                        <Icon name="Users" size={13} />
-                        Карточка пассажира
-                      </a>
-                    )}
+                {/* Фото */}
+                {photos.length > 0 && (
+                  <div className="bg-[#252836] rounded-lg p-3 sm:p-4">
+                    <PhotoGallery photos={photos} readonly={true} />
                   </div>
                 )}
+              </div>
 
-                {/* CEO: смена роли */}
-                {isCeo && !isOwnProfile && (
-                  <div className="mb-4 p-3 bg-[#1e2332] rounded-lg border border-yellow-900/40">
-                    <p className="text-xs text-yellow-600 mb-2 flex items-center gap-1">
-                      <Icon name="Crown" size={12} />
-                      CEO — управление ролью
-                    </p>
+              {/* Правая колонка — статистика + кнопки */}
+              <div className="space-y-4">
+                {/* Статистика — как в личном профиле */}
+                <div className="bg-[#252836] rounded-lg p-6">
+                  <h2 className="text-xl font-bold text-white mb-4">Статистика</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setActiveTab('friends')}
+                      className="bg-[#1e2332] rounded-lg p-4 hover:bg-[#2a2f42] transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Users" className="h-5 w-5 text-blue-500" />
+                        <span className="text-gray-400 text-sm">Друзья</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{friendsCount}</p>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('garage')}
+                      className="bg-[#1e2332] rounded-lg p-4 hover:bg-[#2a2f42] transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Car" className="h-5 w-5 text-purple-500" />
+                        <span className="text-gray-400 text-sm">Гараж</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{vehicles.length}</p>
+                    </button>
+                    <div className="bg-[#1e2332] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Star" className="h-5 w-5 text-yellow-500" />
+                        <span className="text-gray-400 text-sm">Избранное</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">{favoritesCount}</p>
+                    </div>
+                    <div className="bg-[#1e2332] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Calendar" className="h-5 w-5 text-green-500" />
+                        <span className="text-gray-400 text-sm">Мероприятия</span>
+                      </div>
+                      <p className="text-2xl font-bold text-white">0</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Карточки пилота/пассажира */}
+                {(hasPilotCard || hasPassengerCard) && (
+                  <div className="bg-[#252836] rounded-lg p-4">
                     <div className="flex flex-wrap gap-2">
-                      {([
-                        { role: 'user', label: 'Пользователь' },
-                        { role: 'gymkhana', label: '🏍️ Джимханист' },
-                        { role: 'organizer', label: '🎯 Организатор' },
-                        { role: 'moderator', label: '🛡️ Модератор' },
-                        { role: 'admin', label: '⚡ Админ' },
-                        { role: 'ceo', label: '👑 CEO' },
-                      ] as const).map(({ role, label }) => (
-                        <button
-                          key={role}
-                          disabled={roleChanging || profile.role === role}
-                          onClick={() => handleRoleChange(role)}
-                          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                            profile.role === role
-                              ? 'bg-yellow-600/30 text-yellow-400 border border-yellow-600/50 cursor-default'
-                              : 'bg-[#252836] text-gray-400 hover:text-white hover:bg-[#2a2e3f] border border-gray-700'
-                          }`}
+                      {hasPilotCard && (
+                        <a
+                          href={`/pillion?tab=pilots&user_id=${userId}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/20 transition-colors"
                         >
-                          {label}
-                        </button>
-                      ))}
+                          <Icon name="Bike" size={13} />
+                          Карточка пилота
+                        </a>
+                      )}
+                      {hasPassengerCard && (
+                        <a
+                          href={`/pillion?tab=passengers&user_id=${userId}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-colors"
+                        >
+                          <Icon name="Users" size={13} />
+                          Карточка пассажира
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* Кнопка дружбы */}
                 {!isOwnProfile && token && (
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex gap-2">
                     {friendStatus === 'none' && (
                       <Button onClick={addFriend} className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white flex-1">
                         <Icon name="UserPlus" className="h-4 w-4 mr-2" />
@@ -460,85 +502,56 @@ export const UserProfilePage: React.FC = () => {
                     )}
                   </div>
                 )}
-              </div>
 
-              <TabsList className="w-full justify-start bg-transparent border-t border-gray-700 rounded-none px-2 sm:px-4 h-auto py-0">
-                <TabsTrigger
-                  value="profile"
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm"
-                >
-                  Обо мне
-                </TabsTrigger>
-                <TabsTrigger
-                  value="garage"
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm"
-                >
-                  Гараж ({vehicles.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="friends"
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm"
-                >
-                  Друзья ({friendsCount})
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="p-4 sm:p-6">
-                {profile.bio ? (
-                  <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-4">{profile.bio}</p>
-                ) : (
-                  <p className="text-gray-500 text-center py-4 text-sm">Пользователь пока не рассказал о себе</p>
-                )}
-                {photos.length > 0 && (
-                  <PhotoGallery photos={photos} readonly={true} />
+                {/* CEO: смена роли */}
+                {isCeo && !isOwnProfile && (
+                  <div className="bg-[#252836] rounded-lg p-4 border border-yellow-900/40">
+                    <p className="text-xs text-yellow-600 mb-2 flex items-center gap-1">
+                      <Icon name="Crown" size={12} />
+                      CEO — управление ролью
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { role: 'user', label: 'Пользователь' },
+                        { role: 'gymkhana', label: '🏍️ Джимханист' },
+                        { role: 'organizer', label: '🎯 Организатор' },
+                        { role: 'moderator', label: '🛡️ Модератор' },
+                        { role: 'admin', label: '⚡ Админ' },
+                        { role: 'ceo', label: '👑 CEO' },
+                      ] as const).map(({ role, label }) => (
+                        <button
+                          key={role}
+                          disabled={roleChanging || profile.role === role}
+                          onClick={() => handleRoleChange(role)}
+                          className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                            profile.role === role
+                              ? 'bg-yellow-600/30 text-yellow-400 border border-yellow-600/50 cursor-default'
+                              : 'bg-[#1e2332] text-gray-400 hover:text-white hover:bg-[#2a2e3f] border border-gray-700'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="garage" className="mt-0">
-            <div className="bg-[#252836] rounded-lg overflow-hidden">
-              <TabsList className="w-full justify-start bg-transparent border-b border-gray-700 rounded-none px-4 h-auto py-0">
-                <TabsTrigger 
-                  value="profile" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
-                >
-                  Обо мне
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="garage" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
-                >
-                  Гараж ({vehicles.length})
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="friends" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-4 py-3 text-gray-400 data-[state=active]:text-white"
-                >
-                  Друзья ({friendsCount})
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="p-3 sm:p-6">
-                <GarageTab 
-                  vehicles={vehicles} 
-                  onRefresh={loadProfile}
-                  readonly={!isOwnProfile}
-                />
-              </div>
+            <div className="bg-[#252836] rounded-lg p-3 sm:p-6">
+              <GarageTab
+                vehicles={vehicles}
+                onRefresh={loadProfile}
+                readonly={!isOwnProfile}
+              />
             </div>
           </TabsContent>
 
           <TabsContent value="friends" className="mt-0">
-            <div className="bg-[#252836] rounded-lg overflow-hidden">
-              <TabsList className="w-full justify-start bg-transparent border-b border-gray-700 rounded-none px-2 sm:px-4 h-auto py-0">
-                <TabsTrigger value="profile" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm">Обо мне</TabsTrigger>
-                <TabsTrigger value="garage" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm">Гараж ({vehicles.length})</TabsTrigger>
-                <TabsTrigger value="friends" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-[#ff6b35] rounded-none px-3 sm:px-4 py-3 text-gray-400 data-[state=active]:text-white text-sm">Друзья ({friendsCount})</TabsTrigger>
-              </TabsList>
-              <div className="p-4 sm:p-6">
-                <FriendsTab userId={parseInt(userId!)} readonly={!isOwnProfile} />
-              </div>
+            <div className="bg-[#252836] rounded-lg p-4 sm:p-6">
+              <FriendsTab userId={parseInt(userId!)} readonly={!isOwnProfile} />
             </div>
           </TabsContent>
         </Tabs>
