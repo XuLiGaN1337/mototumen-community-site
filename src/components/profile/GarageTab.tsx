@@ -81,14 +81,14 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
 
   const addCroppedPhoto = (dataUrl: string) => {
     if (photoPreviews.length >= 5) return;
-    // Конвертируем dataUrl в File для загрузки
-    fetch(dataUrl)
-      .then(r => r.blob())
-      .then(blob => {
-        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setPhotoFiles(prev => [...prev, file]);
-        setPhotoPreviews(prev => [...prev, dataUrl]);
-      });
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    const u8arr = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+    const file = new File([u8arr], `photo_${Date.now()}.jpg`, { type: mime });
+    setPhotoFiles(prev => [...prev, file]);
+    setPhotoPreviews(prev => [...prev, dataUrl]);
   };
 
   const removePhoto = (index: number) => {
@@ -203,13 +203,14 @@ export const GarageTab: React.FC<GarageTabProps> = ({ vehicles: propVehicles, on
 
   const addCroppedEditPhoto = (dataUrl: string) => {
     if (editPhotoPreviews.length >= 5) return;
-    fetch(dataUrl)
-      .then(r => r.blob())
-      .then(blob => {
-        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        setEditPhotoFiles(prev => [...prev, file]);
-        setEditPhotoPreviews(prev => [...prev, dataUrl]);
-      });
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    const u8arr = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+    const file = new File([u8arr], `photo_${Date.now()}.jpg`, { type: mime });
+    setEditPhotoFiles(prev => [...prev, file]);
+    setEditPhotoPreviews(prev => [...prev, dataUrl]);
   };
 
   const removeEditPhoto = (index: number) => {
