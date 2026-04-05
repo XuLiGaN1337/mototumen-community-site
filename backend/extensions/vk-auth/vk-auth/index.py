@@ -334,7 +334,7 @@ def handle_callback(event: dict, origin: str) -> dict:
             row = cur.fetchone()
 
             if row:
-                # User found by vk_id - just login
+                # User found by vk_id - just login, always refresh avatar from VK
                 user_id, email, name, db_avatar = row
                 cur.execute(
                     f"UPDATE {S}users SET last_login_at = %s, updated_at = %s WHERE id = %s",
@@ -342,7 +342,7 @@ def handle_callback(event: dict, origin: str) -> dict:
                 )
                 email = email or vk_email
                 name = name or full_name
-                photo_url = db_avatar or photo_url
+                photo_url = photo_url or db_avatar  # свежий из ВК приоритетнее
             else:
                 # 2. Check if user exists by email - link VK account
                 if vk_email:
@@ -392,6 +392,15 @@ def handle_callback(event: dict, origin: str) -> dict:
                     VALUES (%s, %s, %s, %s)""",
                 (user_id, refresh_token_hash, refresh_expires, now)
             )
+
+            # Синхронизируем аватар из ВК в user_profiles (откуда читает verify)
+            if photo_url:
+                cur.execute(
+                    f"""INSERT INTO {S}user_profiles (user_id, avatar_url)
+                        VALUES (%s, %s)
+                        ON CONFLICT (user_id) DO UPDATE SET avatar_url = EXCLUDED.avatar_url""",
+                    (user_id, photo_url)
+                )
 
             conn.commit()
 

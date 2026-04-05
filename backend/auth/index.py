@@ -152,7 +152,7 @@ def upload_avatar_to_s3(photo_url: str, user_id: int) -> Optional[str]:
         return None
 
 def move_avatar_to_photos(cur, user_id: int):
-    """Move current avatar to user_photos before replacing — only if not already there (max 3 photos)"""
+    """Move current avatar to user_photos before replacing — only if not already there (max 20 photos)"""
     cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (user_id,))
     row = cur.fetchone()
     if row and row['avatar_url'] and row['avatar_url'].startswith('http'):
@@ -163,7 +163,7 @@ def move_avatar_to_photos(cur, user_id: int):
             return
         cur.execute(f"SELECT COUNT(*) as cnt FROM user_photos WHERE user_id = {user_id}")
         cnt = cur.fetchone()
-        if cnt and cnt['cnt'] >= 3:
+        if cnt and cnt['cnt'] >= 20:
             cur.execute(f"SELECT id FROM user_photos WHERE user_id = {user_id} ORDER BY created_at ASC LIMIT 1")
             oldest = cur.fetchone()
             if oldest:
@@ -534,18 +534,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 auth_user = cur.fetchone()
                 
                 if auth_user:
-                    # Обновляем аватар только если у пользователя ещё нет своего из S3
-                    cur.execute("SELECT avatar_url FROM user_profiles WHERE user_id = %s", (auth_user['id'],))
-                    current_profile = cur.fetchone()
-                    has_s3_avatar = current_profile and current_profile.get('avatar_url') and 'cdn.poehali.dev' in (current_profile.get('avatar_url') or '')
-                    if not has_s3_avatar:
-                        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
-                        tg_photo = get_telegram_photo_url(bot_token, telegram_id) if bot_token else None
-                        actual_photo = tg_photo or photo_url
-                        if actual_photo:
-                            s3_url = upload_avatar_to_s3(actual_photo, auth_user['id'])
-                            if s3_url:
-                                cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
+                    # Всегда обновляем аватар из Telegram при каждом входе
+                    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
+                    tg_photo = get_telegram_photo_url(bot_token, telegram_id) if bot_token else None
+                    actual_photo = tg_photo or photo_url
+                    if actual_photo:
+                        s3_url = upload_avatar_to_s3(actual_photo, auth_user['id'])
+                        if s3_url:
+                            move_avatar_to_photos(cur, auth_user['id'])
+                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
 
                     if username:
                         cur.execute("UPDATE user_profiles SET telegram = %s WHERE user_id = %s", (username, auth_user['id']))
