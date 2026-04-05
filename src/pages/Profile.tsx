@@ -61,16 +61,37 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperSrc, setCropperSrc] = useState<string>("");
-  const [originalSrc, setOriginalSrc] = useState<string>("");
+
+  // Оригинал аватара в base64 — живёт в localStorage чтобы пережить перезагрузку
+  const avatarOrigKey = user ? `avatar_orig_${user.id}` : null;
+  const [originalSrc, setOriginalSrcState] = useState<string>(() => {
+    if (!user) return "";
+    return localStorage.getItem(`avatar_orig_${user.id}`) || "";
+  });
+
+  const setOriginalSrc = (src: string) => {
+    setOriginalSrcState(src);
+    if (avatarOrigKey) {
+      if (src) localStorage.setItem(avatarOrigKey, src);
+      else localStorage.removeItem(avatarOrigKey);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/');
       return;
     }
-    
     loadProfile();
   }, [isAuthenticated]);
+
+  // Подгружаем originalSrc из localStorage когда user.id стал известен
+  useEffect(() => {
+    if (user?.id && !originalSrc) {
+      const saved = localStorage.getItem(`avatar_orig_${user.id}`);
+      if (saved) setOriginalSrcState(saved);
+    }
+  }, [user?.id]);
 
   const loadProfile = async () => {
     if (!token) {
@@ -164,46 +185,38 @@ const Profile = () => {
   };
 
   const handleEditExistingAvatar = async () => {
-    // Если есть локальный base64 оригинала — открываем сразу
+    // Есть сохранённый оригинал — открываем сразу
     if (originalSrc) {
       setCropperSrc(originalSrc);
       setCropperOpen(true);
       return;
     }
 
-    // Нет локального оригинала — нужно загрузить через img элемент и перегнать в base64
+    // Первый раз — загружаем через fetch и сохраняем в localStorage
     const src = user?.avatar_url;
     if (!src) return;
 
     setLoading(true);
-    const img = new window.Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = img.naturalWidth;
-        c.height = img.naturalHeight;
-        const ctx = c.getContext("2d");
-        if (!ctx) { setLoading(false); return; }
-        ctx.drawImage(img, 0, 0);
-        const dataUrl = c.toDataURL("image/jpeg", 0.95);
-        setOriginalSrc(dataUrl);
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setOriginalSrc(dataUrl); // сохраняется в localStorage
         setCropperSrc(dataUrl);
         setCropperOpen(true);
-      } catch {
-        // CORS заблокировал canvas — открываем напрямую (превью сломается но хоть что-то)
-        setCropperSrc(src);
-        setCropperOpen(true);
-      } finally {
         setLoading(false);
-      }
-    };
-    img.onerror = () => {
+      };
+      reader.readAsDataURL(blob);
+    } catch {
+      // fetch заблокирован CORS — кроппер не откроется корректно
+      // но покажем хотя бы диалог
       setCropperSrc(src);
       setCropperOpen(true);
       setLoading(false);
-    };
-    img.src = src + "?v=" + Date.now(); // cache-bust для CORS
+    }
   };
 
   const getDefaultAvatar = (gender: string) => {
