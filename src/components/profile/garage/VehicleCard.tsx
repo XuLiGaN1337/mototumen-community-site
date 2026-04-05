@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Vehicle, vehicleTypes } from "./types";
+import { VehicleOwnersModal } from "./VehicleOwnersModal";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -39,128 +40,172 @@ const VehicleDetailModal: React.FC<{
 }> = ({ vehicle, open, onClose, onEdit, onDelete, readonly, getVehicleIcon }) => {
   const photos = getPhotos(vehicle.photo_url);
   const [photoIdx, setPhotoIdx] = useState(0);
+  const [ownersOpen, setOwnersOpen] = useState(false);
+  const [ownersBrand, setOwnersBrand] = useState("");
+  const [ownersModel, setOwnersModel] = useState("");
   const typeLabel = vehicleTypes.find((t) => t.value === vehicle.vehicle_type)?.label ?? vehicle.vehicle_type;
 
+  const openOwnersSame = () => {
+    setOwnersBrand(vehicle.brand);
+    setOwnersModel(vehicle.model);
+    setOwnersOpen(true);
+  };
+
+  const openOwnersSearch = () => {
+    setOwnersBrand("");
+    setOwnersModel("");
+    setOwnersOpen(true);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden">
-        {/* Фото */}
-        <div className="relative w-full h-56 bg-zinc-950">
-          {photos.length > 0 ? (
-            <>
-              <img
-                src={photos[photoIdx]}
-                alt={`${vehicle.brand} ${vehicle.model}`}
-                className="w-full h-full object-cover"
-              />
-              {photos.length > 1 && (
-                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
-                  {photos.map((_, i) => (
+    <>
+      <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg p-0 overflow-hidden">
+          {/* Фото */}
+          <div className="relative w-full h-56 bg-zinc-950">
+            {photos.length > 0 ? (
+              <>
+                <img
+                  src={photos[photoIdx]}
+                  alt={`${vehicle.brand} ${vehicle.model}`}
+                  className="w-full h-full object-cover"
+                />
+                {photos.length > 1 && (
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                    {photos.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPhotoIdx(i)}
+                        className={`w-2 h-2 rounded-full transition-colors ${i === photoIdx ? "bg-white" : "bg-white/40"}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                {photos.length > 1 && (
+                  <>
                     <button
-                      key={i}
-                      onClick={() => setPhotoIdx(i)}
-                      className={`w-2 h-2 rounded-full transition-colors ${i === photoIdx ? "bg-white" : "bg-white/40"}`}
-                    />
-                  ))}
+                      onClick={() => setPhotoIdx((i) => (i - 1 + photos.length) % photos.length)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 rounded-full p-1 hover:bg-black/70"
+                    >
+                      <Icon name="ChevronLeft" size={18} />
+                    </button>
+                    <button
+                      onClick={() => setPhotoIdx((i) => (i + 1) % photos.length)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 rounded-full p-1 hover:bg-black/70"
+                    >
+                      <Icon name="ChevronRight" size={18} />
+                    </button>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Icon name={getVehicleIcon(vehicle.vehicle_type)} size={64} className="text-zinc-700" />
+              </div>
+            )}
+            {vehicle.is_primary && (
+              <span className="absolute top-3 left-3 text-xs bg-accent text-white px-2 py-0.5 rounded font-medium">
+                Основная
+              </span>
+            )}
+          </div>
+
+          {/* Инфо */}
+          <div className="p-5 space-y-4">
+            <div>
+              <p className="text-gray-400 text-xs mb-0.5">{typeLabel}</p>
+              <h2 className="font-['Oswald'] text-2xl text-white">
+                {vehicle.brand} {vehicle.model}
+              </h2>
+              {vehicle.year && <p className="text-gray-400 text-sm">{vehicle.year} г.</p>}
+            </div>
+
+            {/* Характеристики */}
+            <div className="grid grid-cols-2 gap-2">
+              {vehicle.displacement ? (
+                <div className="bg-zinc-800 rounded-lg px-3 py-2">
+                  <p className="text-gray-500 text-xs">Объём</p>
+                  <p className="text-white text-sm font-medium">{vehicle.displacement} см³</p>
                 </div>
-              )}
-              {photos.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setPhotoIdx((i) => (i - 1 + photos.length) % photos.length)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 rounded-full p-1 hover:bg-black/70"
-                  >
-                    <Icon name="ChevronLeft" size={18} />
-                  </button>
-                  <button
-                    onClick={() => setPhotoIdx((i) => (i + 1) % photos.length)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 rounded-full p-1 hover:bg-black/70"
-                  >
-                    <Icon name="ChevronRight" size={18} />
-                  </button>
-                </>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Icon name={getVehicleIcon(vehicle.vehicle_type)} size={64} className="text-zinc-700" />
+              ) : null}
+              {vehicle.power_hp ? (
+                <div className="bg-zinc-800 rounded-lg px-3 py-2">
+                  <p className="text-gray-500 text-xs">Мощность</p>
+                  <p className="text-white text-sm font-medium">{vehicle.power_hp} л.с.</p>
+                </div>
+              ) : null}
+              {vehicle.mileage ? (
+                <div className="bg-zinc-800 rounded-lg px-3 py-2">
+                  <p className="text-gray-500 text-xs">Пробег</p>
+                  <p className="text-white text-sm font-medium">{vehicle.mileage.toLocaleString("ru-RU")} км</p>
+                </div>
+              ) : null}
             </div>
-          )}
-          {vehicle.is_primary && (
-            <span className="absolute top-3 left-3 text-xs bg-accent text-white px-2 py-0.5 rounded font-medium">
-              Основная
-            </span>
-          )}
-        </div>
 
-        {/* Инфо */}
-        <div className="p-5 space-y-4">
-          <div>
-            <p className="text-gray-400 text-xs mb-0.5">{typeLabel}</p>
-            <h2 className="font-['Oswald'] text-2xl text-white">
-              {vehicle.brand} {vehicle.model}
-            </h2>
-            {vehicle.year && <p className="text-gray-400 text-sm">{vehicle.year} г.</p>}
-          </div>
-
-          {/* Характеристики */}
-          <div className="grid grid-cols-2 gap-2">
-            {vehicle.displacement ? (
+            {vehicle.modifications && (
               <div className="bg-zinc-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500 text-xs">Объём</p>
-                <p className="text-white text-sm font-medium">{vehicle.displacement} см³</p>
+                <p className="text-gray-500 text-xs mb-1">Модификации</p>
+                <p className="text-gray-200 text-sm">{vehicle.modifications}</p>
               </div>
-            ) : null}
-            {vehicle.power_hp ? (
+            )}
+
+            {vehicle.description && (
               <div className="bg-zinc-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500 text-xs">Мощность</p>
-                <p className="text-white text-sm font-medium">{vehicle.power_hp} л.с.</p>
+                <p className="text-gray-500 text-xs mb-1">Описание</p>
+                <p className="text-gray-200 text-sm leading-relaxed">{vehicle.description}</p>
               </div>
-            ) : null}
-            {vehicle.mileage ? (
-              <div className="bg-zinc-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500 text-xs">Пробег</p>
-                <p className="text-white text-sm font-medium">{vehicle.mileage.toLocaleString("ru-RU")} км</p>
-              </div>
-            ) : null}
-          </div>
+            )}
 
-          {vehicle.modifications && (
-            <div className="bg-zinc-800 rounded-lg px-3 py-2">
-              <p className="text-gray-500 text-xs mb-1">Модификации</p>
-              <p className="text-gray-200 text-sm">{vehicle.modifications}</p>
-            </div>
-          )}
-
-          {vehicle.description && (
-            <div className="bg-zinc-800 rounded-lg px-3 py-2">
-              <p className="text-gray-500 text-xs mb-1">Описание</p>
-              <p className="text-gray-200 text-sm leading-relaxed">{vehicle.description}</p>
-            </div>
-          )}
-
-          {!readonly && (
-            <div className="flex gap-2 pt-1">
+            {/* Кнопки поиска */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <Button
                 variant="outline"
-                className="flex-1 border-zinc-600 text-gray-300 hover:text-white"
-                onClick={() => { onClose(); onEdit?.(); }}
+                className="border-zinc-600 text-gray-300 hover:text-white hover:border-orange-500/50 text-xs"
+                onClick={openOwnersSame}
               >
-                <Icon name="Edit" size={15} className="mr-1.5" />
-                Редактировать
+                <Icon name="Users" size={14} className="mr-1.5 text-orange-400" />
+                Найти такой же
               </Button>
               <Button
                 variant="outline"
-                className="border-red-800 text-red-400 hover:bg-red-500/10 px-3"
-                onClick={() => { onClose(); onDelete?.(); }}
+                className="border-zinc-600 text-gray-300 hover:text-white hover:border-orange-500/50 text-xs"
+                onClick={openOwnersSearch}
               >
-                <Icon name="Trash2" size={15} />
+                <Icon name="Search" size={14} className="mr-1.5 text-orange-400" />
+                Найти технику
               </Button>
             </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+
+            {!readonly && (
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-zinc-600 text-gray-300 hover:text-white"
+                  onClick={() => { onClose(); onEdit?.(); }}
+                >
+                  <Icon name="Edit" size={15} className="mr-1.5" />
+                  Редактировать
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-red-800 text-red-400 hover:bg-red-500/10 px-3"
+                  onClick={() => { onClose(); onDelete?.(); }}
+                >
+                  <Icon name="Trash2" size={15} />
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <VehicleOwnersModal
+        open={ownersOpen}
+        onClose={() => setOwnersOpen(false)}
+        initialBrand={ownersBrand}
+        initialModel={ownersModel}
+      />
+    </>
   );
 };
 

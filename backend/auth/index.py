@@ -1266,6 +1266,30 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 users = cur.fetchall()
                 return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'users': [dict(u) for u in users]}, default=str), 'isBase64Encoded': False}
         
+        # === SEARCH VEHICLES ===
+        elif query_params.get('action') == 'search_vehicles':
+            brand = query_params.get('brand', '').replace("'", "''").strip()
+            model = query_params.get('model', '').replace("'", "''").strip()
+            if not brand:
+                return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'error': 'brand required'}), 'isBase64Encoded': False}
+            model_cond = f"AND v.model ILIKE '%{model}%'" if model else ""
+            cur.execute(f"""
+                SELECT v.id, v.user_id, v.vehicle_type, v.brand, v.model, v.year,
+                       v.photo_url, v.displacement, v.power_hp, v.mileage,
+                       v.modifications, v.description, v.is_primary,
+                       u.name as owner_name, u.username as owner_username,
+                       p.avatar_url as owner_avatar, p.location as owner_location
+                FROM user_vehicles v
+                JOIN users u ON u.id = v.user_id
+                LEFT JOIN user_profiles p ON p.user_id = v.user_id
+                WHERE v.brand ILIKE '%{brand}%' {model_cond}
+                  AND p.is_public = true AND u.is_hidden = false
+                ORDER BY v.brand, v.model, v.year DESC
+                LIMIT 50
+            """)
+            vehicles = cur.fetchall()
+            return {'statusCode': 200, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'}, 'body': json.dumps({'vehicles': [dict(v) for v in vehicles]}, default=str), 'isBase64Encoded': False}
+
         # === PHOTOS ===
         elif 'photo' in path or query_params.get('action') == 'photos':
             if not user:
