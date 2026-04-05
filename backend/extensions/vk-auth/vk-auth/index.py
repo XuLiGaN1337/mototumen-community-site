@@ -393,14 +393,13 @@ def handle_callback(event: dict, origin: str) -> dict:
                 (user_id, refresh_token_hash, refresh_expires, now)
             )
 
-            # Синхронизируем аватар из ВК в user_profiles (откуда читает verify)
-            if photo_url:
-                cur.execute(
-                    f"""INSERT INTO {S}user_profiles (user_id, avatar_url)
-                        VALUES (%s, %s)
-                        ON CONFLICT (user_id) DO UPDATE SET avatar_url = EXCLUDED.avatar_url""",
-                    (user_id, photo_url)
-                )
+            # Создаём профиль если его нет (без аватара — пользователь загрузит сам)
+            cur.execute(
+                f"""INSERT INTO {S}user_profiles (user_id)
+                    VALUES (%s)
+                    ON CONFLICT (user_id) DO NOTHING""",
+                (user_id,)
+            )
 
             conn.commit()
 

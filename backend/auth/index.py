@@ -534,16 +534,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 auth_user = cur.fetchone()
                 
                 if auth_user:
-                    # Всегда обновляем аватар из Telegram при каждом входе
-                    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN_AUTH') or os.environ.get('TELEGRAM_BOT_TOKEN')
-                    tg_photo = get_telegram_photo_url(bot_token, telegram_id) if bot_token else None
-                    actual_photo = tg_photo or photo_url
-                    if actual_photo:
-                        s3_url = upload_avatar_to_s3(actual_photo, auth_user['id'])
-                        if s3_url:
-                            move_avatar_to_photos(cur, auth_user['id'])
-                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
-
                     if username:
                         cur.execute("UPDATE user_profiles SET telegram = %s WHERE user_id = %s", (username, auth_user['id']))
                     
@@ -579,14 +569,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     )
                     auth_user = cur.fetchone()
                     
-                    s3_avatar_url = None
-                    if photo_url:
-                        s3_avatar_url = upload_avatar_to_s3(photo_url, auth_user['id'])
-                    avatar_to_save = s3_avatar_url if s3_avatar_url else photo_url
-                    
                     cur.execute(
-                        "INSERT INTO user_profiles (user_id, avatar_url, telegram) VALUES (%s, %s, %s)",
-                        (auth_user['id'], avatar_to_save, username)
+                        "INSERT INTO user_profiles (user_id, telegram) VALUES (%s, %s)",
+                        (auth_user['id'], username)
                     )
                     
                     new_token = generate_token()
@@ -708,12 +693,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         profile_vals.append(auth_user['id'])
                         cur.execute(f"UPDATE user_profiles SET {', '.join(profile_updates)} WHERE user_id = %s", profile_vals)
 
-                    if ya_photo_url:
-                        move_avatar_to_photos(cur, auth_user['id'])
-                        s3_url = upload_avatar_to_s3(ya_photo_url, auth_user['id'])
-                        if s3_url:
-                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
-                    
                     new_token = generate_token()
                     expires_at = datetime.now() + timedelta(days=30)
                     cur.execute(
@@ -764,11 +743,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         profile_vals.append(auth_user['id'])
                         cur.execute(f"UPDATE user_profiles SET {', '.join(profile_updates)} WHERE user_id = %s", profile_vals)
 
-                    if ya_photo_url:
-                        s3_url = upload_avatar_to_s3(ya_photo_url, auth_user['id'])
-                        if s3_url:
-                            cur.execute("UPDATE user_profiles SET avatar_url = %s WHERE user_id = %s", (s3_url, auth_user['id']))
-                    
                     new_token = generate_token()
                     expires_at = datetime.now() + timedelta(days=30)
                     cur.execute(
