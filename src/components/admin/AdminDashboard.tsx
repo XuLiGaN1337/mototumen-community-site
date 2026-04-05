@@ -1,7 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
-import { Badge } from "@/components/ui/badge";
 
 interface Stats {
   total_users: number;
@@ -21,40 +20,9 @@ interface Stats {
   pending_password_resets: number;
 }
 
-interface Activity {
-  id: number;
-  action: string;
-  user_name: string;
-  user_role: string;
-  created_at: string;
-}
-
 interface AdminDashboardProps {
   stats: Stats | null;
-  recentActivity: Activity[];
-}
-
-const ROLE_EMOJI: Record<string, string> = {
-  ceo: '👑', admin: '⚡', moderator: '🛡️', user: '👤',
-};
-
-const ACTION_ICON: Record<string, string> = {
-  'Вход в систему': 'LogIn',
-  'Регистрация': 'UserPlus',
-  'Редактирование роли': 'Shield',
-  'Удаление пользователя': 'UserX',
-};
-
-function timeAgo(dateStr: string): string {
-  const normalized = dateStr.endsWith('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z';
-  const diff = Date.now() - new Date(normalized).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'только что';
-  if (m < 60) return `${m} мин назад`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ч назад`;
-  const d = Math.floor(h / 24);
-  return `${d} дн назад`;
+  recentActivity: unknown[];
 }
 
 interface StatCardProps {
@@ -174,39 +142,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ stats, recentAct
         />
       </div>
 
-      {/* Последняя активность */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Icon name="Activity" className="h-4 w-4" />
-            Последние действия
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentActivity.length > 0 ? (
-            <div className="space-y-3">
-              {recentActivity.map((a, i) => (
-                <div key={a.id ?? i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-sm">
-                    {ROLE_EMOJI[a.user_role] || '👤'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {a.user_name}
-                      <span className="text-muted-foreground font-normal"> — {a.action}</span>
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-xs flex-shrink-0 hidden sm:flex">
-                    {timeAgo(a.created_at)}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">Нет данных об активности</p>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };
