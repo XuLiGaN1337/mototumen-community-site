@@ -171,7 +171,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({ src, open, onConfirm
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onCancel()}>
-      <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-xl p-4 flex flex-col gap-4">
+      <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-2xl p-4 flex flex-col gap-4">
         <div>
           <p className="text-sm font-semibold text-white mb-0.5">Кадрирование фото</p>
           <p className="text-xs text-zinc-500">Перетащи рамку или используй кнопки, чтобы выбрать нужную часть фото</p>
@@ -187,7 +187,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({ src, open, onConfirm
             ref={imgRef}
             src={src}
             alt="crop"
-            className="w-full object-contain max-h-[60vh]"
+            className="w-full object-contain max-h-[65vh]"
             draggable={false}
             onLoad={calcFrame}
           />
