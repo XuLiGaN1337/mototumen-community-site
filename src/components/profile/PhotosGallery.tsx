@@ -62,7 +62,7 @@ export const PhotosGallery: React.FC<PhotosGalleryProps> = ({
               <img
                 src={photo.photo_url}
                 alt=""
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-zinc-900"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all" />
             </div>

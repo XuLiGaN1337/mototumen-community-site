@@ -110,11 +110,11 @@ const ClassifiedCard: React.FC<ClassifiedCardProps> = ({ item, user }) => {
 
       <CardHeader className="p-0">
         {item.images.length > 0 ? (
-          <div className="relative w-full h-48 overflow-hidden">
+          <div className="relative w-full h-48 overflow-hidden bg-zinc-900">
             <img
               src={item.images[0]}
               alt={item.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute bottom-2 right-2">
               <FavoriteButton

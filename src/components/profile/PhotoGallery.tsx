@@ -110,7 +110,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               <img
                 src={photo.photo_url}
                 alt={`Фото ${idx + 1}`}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                className="w-full h-full object-contain bg-zinc-900 transition-transform group-hover:scale-105"
               />
               {/* Оверлей только для владельца */}
               {!readonly && (

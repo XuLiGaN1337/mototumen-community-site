@@ -95,7 +95,7 @@ const GaragePickerModal: React.FC<GaragePickerModalProps> = ({ open, onClose, on
                   {/* Фото */}
                   <div className="relative w-full aspect-square bg-zinc-900">
                     {photo ? (
-                      <img src={photo} alt={`${v.brand} ${v.model}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={photo} alt={`${v.brand} ${v.model}`} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Icon name={icon as 'Bike'} className="h-10 w-10 text-zinc-600" />
