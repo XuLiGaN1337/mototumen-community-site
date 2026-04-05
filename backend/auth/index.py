@@ -537,6 +537,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     if username:
                         cur.execute("UPDATE user_profiles SET telegram = %s WHERE user_id = %s", (username, auth_user['id']))
                     
+                    # Чистим просроченные сессии этого пользователя
+                    cur.execute("DELETE FROM user_sessions WHERE user_id = %s AND expires_at <= NOW()", (auth_user['id'],))
+                    
                     new_token = generate_token()
                     expires_at = datetime.now() + timedelta(days=30)
                     
@@ -692,6 +695,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     if profile_updates:
                         profile_vals.append(auth_user['id'])
                         cur.execute(f"UPDATE user_profiles SET {', '.join(profile_updates)} WHERE user_id = %s", profile_vals)
+
+                    # Чистим просроченные сессии этого пользователя
+                    cur.execute("DELETE FROM user_sessions WHERE user_id = %s AND expires_at <= NOW()", (auth_user['id'],))
 
                     new_token = generate_token()
                     expires_at = datetime.now() + timedelta(days=30)

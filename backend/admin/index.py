@@ -775,7 +775,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE is_hidden = false) as total_users,
                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE is_hidden = false AND created_at > NOW() - INTERVAL '30 days') as new_users_30d,
                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE is_hidden = false AND created_at > NOW() - INTERVAL '7 days') as new_users_7d,
-                    (SELECT COUNT(*) FROM {SCHEMA}.user_sessions WHERE expires_at > NOW()) as active_sessions,
+                    (SELECT COUNT(DISTINCT user_id) FROM {SCHEMA}.user_sessions WHERE expires_at > NOW()) as active_sessions,
                     (SELECT COUNT(*) FROM {SCHEMA}.users WHERE role IN ('admin','ceo','moderator') AND is_hidden = false) as total_admins,
                     (SELECT COUNT(*) FROM {SCHEMA}.user_friends WHERE status = 'accepted') as total_friendships,
                     (SELECT COUNT(*) FROM {SCHEMA}.user_friends WHERE status = 'pending') as pending_friend_requests,
