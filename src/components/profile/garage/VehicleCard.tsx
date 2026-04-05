@@ -173,9 +173,17 @@ const VehicleDetailModal: React.FC<{
               }`}
             >
               {/* Заголовок панели */}
-              <div className="px-4 pt-4 pb-2 border-b border-zinc-800 flex-shrink-0">
-                <p className="text-white font-semibold text-sm">{vehicle.brand} {vehicle.model}</p>
-                {vehicle.year && <p className="text-zinc-400 text-xs">{vehicle.year} г.</p>}
+              <div className="px-4 pt-4 pb-2 border-b border-zinc-800 flex-shrink-0 flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-white font-semibold text-sm">{vehicle.brand} {vehicle.model}</p>
+                  {vehicle.year && <p className="text-zinc-400 text-xs">{vehicle.year} г.</p>}
+                </div>
+                <button
+                  onClick={() => setPanelOpen(false)}
+                  className="text-zinc-500 hover:text-white transition-colors flex-shrink-0 mt-0.5"
+                >
+                  <Icon name="X" size={14} />
+                </button>
               </div>
 
               {/* Детали */}
